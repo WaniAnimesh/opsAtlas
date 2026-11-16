@@ -1,0 +1,60 @@
+{
+  "slug": "cloudflare-2019-07-waf-regex",
+  "title": "Cloudflare Global Outage From WAF Regular Expression CPU Exhaustion",
+  "org": "Cloudflare",
+  "incident_date": "2019-07-02",
+  "summary": "A new Web Application Firewall managed rule containing a regular expression with excessive backtracking was deployed globally. It exhausted CPU on machines handling HTTP traffic and produced 502 errors worldwide until the WAF was disabled with a global kill.",
+  "impact": "Cloudflare-proxied sites returned 502 errors worldwide for roughly half an hour.",
+  "failure_domain": "cpu-exhaustion",
+  "severity": "sev1",
+  "is_reconstruction": true,
+  "skill_tags": ["change-management", "global-rollout", "regex", "kill-switch"],
+  "sources": [
+    {
+      "publisher": "Cloudflare",
+      "url": "https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/",
+      "published_at": "2019-07-12",
+      "source_tier": "tier1"
+    }
+  ],
+  "timeline": [
+    {
+      "occurred_at": "2019-07-02T13:42:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "The new WAF rule is deployed globally and CPU usage spikes on edge machines.",
+      "confidence": "fact",
+      "source_ref": "Cloudflare",
+      "sequence_pos": 0
+    },
+    {
+      "occurred_at": "2019-07-02T14:02:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "A global kill of the WAF managed rulesets is decided and executed.",
+      "confidence": "inference",
+      "source_ref": "Cloudflare",
+      "sequence_pos": 1
+    }
+  ],
+  "causal_factors": [
+    {
+      "factor_type": "unsafe-regex",
+      "description": "A regular expression with excessive backtracking consumed CPU on every request path that evaluated it.",
+      "confidence": "fact",
+      "source_ref": "Cloudflare"
+    },
+    {
+      "factor_type": "unstaged-rollout",
+      "description": "The rule change was released worldwide at once without a gradual, canaried rollout.",
+      "confidence": "fact",
+      "source_ref": "Cloudflare"
+    }
+  ],
+  "lessons": [
+    {
+      "category": "safe-deployment",
+      "statement": "Rule and configuration changes deserve the same staged rollout and resource limits as code changes.",
+      "recommended_control": "Stage rule releases and use regex engines with bounded execution time.",
+      "source_ref": "Cloudflare"
+    }
+  ]
+}

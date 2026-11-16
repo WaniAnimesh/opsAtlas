@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "maxScore": 10,
+  "criteria": {
+    "impactControl": {
+      "description": "Simulated time elapsed relative to the scenario time limit; less elapsed is better. Timed-out sessions score 0."
+    },
+    "diagnosticQuality": {
+      "description": "Available evidence requested before the first mitigating action (an action with state effects).",
+      "minEvidenceBeforeMitigation": 1
+    },
+    "riskManagement": {
+      "description": "Irreversible actions taken only after at least one piece of evidence was gathered."
+    },
+    "recoveryQuality": {
+      "description": "Whether the session ended in a terminal state, weighted by terminal mapping.",
+      "unmappedTerminalFraction": 1
+    },
+    "communication": {
+      "description": "Use of declare/notify/page/escalate-type actions, each with a rationale provided.",
+      "actionKeywords": ["declare", "notify", "page", "escalate", "communicate", "announce"]
+    },
+    "learningReflection": {
+      "description": "Share of actions whose rationale was chosen from the offered rationale options."
+    }
+  },
+  "terminalStates": {
+    "state-mitigated": {
+      "outcome": "mitigated",
+      "recoveryFraction": 1,
+      "debrief": "The incident was mitigated and services returned to a healthy state."
+    }
+  }
+}

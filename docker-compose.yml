@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: opsatlas
+      POSTGRES_USER: opsatlas
+      POSTGRES_PASSWORD: opsatlas_dev
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U opsatlas']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - '3001:3001'
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://opsatlas:opsatlas_dev@db:5432/opsatlas
+      AUTH_ISSUER: ${AUTH_ISSUER:-}
+      AUTH_AUDIENCE: ${AUTH_AUDIENCE:-}
+      NODE_ENV: development
+    volumes:
+      - ./src:/app/src:delegated
+      - ./content:/app/content:ro
+    # ts-node-dev can't resolve the NodeNext-style ".js" import specifiers, so
+    # compile with tsc and run the CJS output (no hot reload; use `docker compose restart api`).
+    command: sh -c "npx tsc --project tsconfig.json && node dist/server.js"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NODE_ENV: development
+    volumes:
+      - ./src/frontend:/app/src/frontend:delegated
+      # Keep image-installed deps/build cache; don't let the bind mount hide them.
+      - /app/src/frontend/node_modules
+      - /app/src/frontend/.next
+      - ./content:/app/content:ro
+    command: npm run dev
+
+volumes:
+  postgres_data:

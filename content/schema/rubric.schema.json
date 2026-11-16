@@ -1,0 +1,78 @@
+{
+  "title": "RubricDefinition",
+  "description": "Schema for OpsAtlas Rubric files stored in /content/rubrics/{version}.json (JSON Schema draft-07, AJV default).",
+  "type": "object",
+  "required": ["version", "maxScore", "criteria", "terminalStates"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "maxScore": { "type": "number", "exclusiveMinimum": 0 },
+    "criteria": {
+      "type": "object",
+      "required": [
+        "impactControl",
+        "diagnosticQuality",
+        "riskManagement",
+        "recoveryQuality",
+        "communication",
+        "learningReflection"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "impactControl": { "$ref": "#/definitions/Criterion" },
+        "diagnosticQuality": {
+          "type": "object",
+          "required": ["description", "minEvidenceBeforeMitigation"],
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string", "minLength": 1 },
+            "minEvidenceBeforeMitigation": { "type": "number", "minimum": 0 }
+          }
+        },
+        "riskManagement": { "$ref": "#/definitions/Criterion" },
+        "recoveryQuality": {
+          "type": "object",
+          "required": ["description", "unmappedTerminalFraction"],
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string", "minLength": 1 },
+            "unmappedTerminalFraction": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "communication": {
+          "type": "object",
+          "required": ["description", "actionKeywords"],
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string", "minLength": 1 },
+            "actionKeywords": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "learningReflection": { "$ref": "#/definitions/Criterion" }
+      }
+    },
+    "terminalStates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["outcome", "recoveryFraction", "debrief"],
+        "additionalProperties": false,
+        "properties": {
+          "outcome": { "type": "string", "minLength": 1 },
+          "recoveryFraction": { "type": "number", "minimum": 0, "maximum": 1 },
+          "debrief": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Criterion": {
+      "type": "object",
+      "required": ["description"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

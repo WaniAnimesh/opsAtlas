@@ -1,0 +1,136 @@
+{
+  "id": "scenario-kinesis-2021-v1",
+  "incident_slug": "aws-us-east-1-2021-kinesis",
+  "title": "Kinesis Cascade: Diagnosing a Control Plane Failure",
+  "objective": "Identify the root cause of a cascading AWS service failure and apply correct mitigation before customer impact exceeds the SLO threshold.",
+  "difficulty": "intermediate",
+  "est_duration_min": 45,
+  "time_limit_min": 60,
+  "rubric_version": "1.0.0",
+  "skill_tags": ["capacity-management", "cascading-failures", "observability", "cloud-operations"],
+  "version": "1.0.0",
+  "definition": {
+    "initial_state_id": "state-normal",
+    "states": {
+      "state-normal": {
+        "id": "state-normal",
+        "is_terminal": false,
+        "service_health": { "kinesis": "healthy", "lambda": "healthy" },
+        "metrics": { "kinesis_put_latency_p99_ms": 12, "lambda_error_rate_pct": 0.1 },
+        "dependencies": {},
+        "customer_impact": "No customer impact. All services operating within SLO.",
+        "evidence_available": ["ev-kinesis-metrics"],
+        "active_alerts": []
+      },
+      "state-kinesis-overloaded": {
+        "id": "state-kinesis-overloaded",
+        "is_terminal": false,
+        "service_health": { "kinesis": "degraded", "lambda": "degraded" },
+        "metrics": { "kinesis_put_latency_p99_ms": 4500, "lambda_error_rate_pct": 35.0 },
+        "dependencies": { "kinesis": "front-end-thread-limit-exceeded" },
+        "customer_impact": "Authentication failures affecting approximately 30 percent of sign-in requests.",
+        "evidence_available": ["ev-kinesis-metrics", "ev-capacity-change-log"],
+        "active_alerts": ["KINESIS_HIGH_LATENCY", "LAMBDA_ERROR_RATE_HIGH"]
+      },
+      "state-mitigated": {
+        "id": "state-mitigated",
+        "is_terminal": true,
+        "service_health": { "kinesis": "healthy", "lambda": "healthy" },
+        "metrics": { "kinesis_put_latency_p99_ms": 15, "lambda_error_rate_pct": 0.2 },
+        "dependencies": {},
+        "customer_impact": "All services recovered. Customer impact resolved.",
+        "evidence_available": [],
+        "active_alerts": []
+      }
+    },
+    "actions": {
+      "action-scale-kinesis": {
+        "id": "action-scale-kinesis",
+        "label": "Scale Kinesis front-end fleet",
+        "preconditions": [{ "field": "service_health.kinesis", "operator": "eq", "value": "degraded" }],
+        "time_cost": 20,
+        "effects": [{ "field": "service_health.kinesis", "value": "healthy" }],
+        "side_effects": [],
+        "delayed_effects": [],
+        "reversible": false,
+        "rationale_options": [
+          "Kinesis metrics show thread-limit exhaustion; scaling will restore capacity",
+          "Capacity change log shows a recent automated operation modified the fleet size"
+        ]
+      },
+      "action-declare-incident": {
+        "id": "action-declare-incident",
+        "label": "Declare a SEV1 incident and page the on-call team",
+        "preconditions": [],
+        "time_cost": 2,
+        "effects": [],
+        "side_effects": [],
+        "delayed_effects": [],
+        "reversible": true,
+        "rationale_options": [
+          "Customer impact exceeds SEV1 thresholds; team needs to coordinate",
+          "Breadth of affected services requires multi-team response"
+        ]
+      },
+      "action-check-logs": {
+        "id": "action-check-logs",
+        "label": "Review CloudWatch and Kinesis error logs",
+        "preconditions": [],
+        "time_cost": 5,
+        "effects": [],
+        "side_effects": [],
+        "delayed_effects": [],
+        "reversible": true,
+        "rationale_options": [
+          "Logs will confirm whether Kinesis is rejecting requests due to throttling",
+          "Error patterns in logs will identify which downstream services are affected"
+        ]
+      }
+    },
+    "transitions": [
+      {
+        "from_state_id": "state-normal",
+        "trigger": "time_elapsed",
+        "guard": null,
+        "to_state_id": "state-kinesis-overloaded",
+        "effects": [],
+        "delayed_effects": []
+      },
+      {
+        "from_state_id": "state-kinesis-overloaded",
+        "trigger": "action-scale-kinesis",
+        "guard": null,
+        "to_state_id": "state-mitigated",
+        "effects": [],
+        "delayed_effects": []
+      }
+    ],
+    "evidence": {
+      "ev-kinesis-metrics": {
+        "id": "ev-kinesis-metrics",
+        "category": "Observable",
+        "type": "metrics",
+        "time_cost": 0,
+        "payload": {
+          "description": "Kinesis PutRecord p99 latency chart showing spike from 12ms to 4500ms at 07:35 UTC.",
+          "data_points": [
+            { "time": "07:30", "latency_ms": 12 },
+            { "time": "07:35", "latency_ms": 4500 }
+          ]
+        }
+      },
+      "ev-capacity-change-log": {
+        "id": "ev-capacity-change-log",
+        "category": "Artifact",
+        "type": "change_history",
+        "time_cost": 2,
+        "payload": {
+          "description": "Automated capacity management change log showing a fleet resize at 07:32 UTC that added servers without adjusting thread pool limits.",
+          "change_time": "2021-12-07T07:32:00Z",
+          "change_type": "capacity-resize",
+          "actor": "capacity-automation-v3"
+        }
+      }
+    }
+  }
+}

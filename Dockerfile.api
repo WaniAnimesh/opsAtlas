@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY tsconfig.json ./
+
+EXPOSE 3001
+
+# CMD is overridden by docker-compose command (ts-node-dev)
+CMD ["node", "dist/server.js"]

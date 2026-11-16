@@ -1,0 +1,63 @@
+{
+  "name": "opsatlas",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "npm --prefix src/frontend run dev",
+    "prebuild": "npm run build:content-bundle",
+    "build": "tsc --project tsconfig.json",
+    "prelint": "npm run build:content-bundle",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css,md}\"",
+    "pretest:run": "npm run build:content-bundle",
+    "test:run": "vitest run",
+    "test:d1": "vitest run d1-repository d1-assessment worker.test",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky",
+    "validate-content": "ts-node --project tsconfig.scripts.json scripts/validate-content.ts",
+    "build:search-index": "ts-node --project tsconfig.scripts.json scripts/build-search-index.ts",
+    "build:content-bundle": "ts-node --project tsconfig.scripts.json scripts/build-content-bundle.ts",
+    "worker:dev": "wrangler dev --env dev",
+    "preworker:dry-run": "npm run build:content-bundle",
+    "worker:dry-run": "wrangler deploy --dry-run --outdir dist-worker"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261115.1",
+    "@types/node": "^20.19.43",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "@vitest/coverage-v8": "^3.1.4",
+    "eslint": "^9.27.0",
+    "fast-check": "^4.10.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "miniflare": "^5.20261113.0-beta",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "2.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4",
+    "wrangler": "^4.162.0"
+  },
+  "lint-staged": {
+    "{src/*.ts,src/{api,modules,types,content,test-support}/**/*.ts}": [
+      "eslint --max-warnings 0",
+      "prettier --check"
+    ]
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.6",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "hono": "^4.13.17",
+    "uuid": "^14.0.3",
+    "zod": "^4.6.7"
+  }
+}

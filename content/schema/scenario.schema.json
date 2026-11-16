@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://opsatlas.dev/schemas/scenario.schema.json",
+  "title": "ScenarioContentFile",
+  "description": "Schema for OpsAtlas scenario content files stored in /content/scenarios/",
+  "type": "object",
+  "required": [
+    "id", "incident_slug", "title", "objective", "difficulty",
+    "est_duration_min", "rubric_version", "skill_tags", "version", "definition"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "incident_slug": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "difficulty": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+    "est_duration_min": { "type": "integer", "minimum": 5, "maximum": 240 },
+    "time_limit_min": { "type": "integer" },
+    "rubric_version": { "type": "string", "minLength": 1 },
+    "skill_tags": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "version": { "type": "string", "minLength": 1 },
+    "definition": { "$ref": "#/definitions/ScenarioDefinition" }
+  },
+  "definitions": {
+    "ScenarioDefinition": {
+      "type": "object",
+      "required": ["initial_state_id", "states", "actions", "transitions", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "initial_state_id": { "type": "string", "minLength": 1 },
+        "states": { "type": "object", "additionalProperties": true },
+        "actions": { "type": "object", "additionalProperties": true },
+        "transitions": { "type": "array", "items": { "type": "object" } },
+        "evidence": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

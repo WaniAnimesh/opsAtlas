@@ -1,0 +1,74 @@
+{
+  "slug": "aws-us-east-1-2021-kinesis",
+  "title": "AWS US-EAST-1 Kinesis Overload and Cascading Failure",
+  "org": "Amazon Web Services",
+  "incident_date": "2021-12-07",
+  "summary": "A capacity management error in AWS US-EAST-1 caused Amazon Kinesis to become overloaded, triggering a cascading failure across multiple dependent AWS services including Cognito, CloudWatch, and Lambda. The incident lasted approximately seven hours and affected a large number of customers.",
+  "impact": "Widespread degradation of AWS services in the US-EAST-1 region for approximately 7 hours. Services affected included Amazon Kinesis, AWS Lambda, Amazon Cognito, Amazon CloudWatch, AWS EventBridge, and others relying on internal control planes.",
+  "failure_domain": "retry-storm",
+  "severity": "sev1",
+  "is_reconstruction": true,
+  "skill_tags": ["capacity-management", "cascading-failures", "observability", "cloud-operations"],
+  "sources": [
+    {
+      "publisher": "Amazon Web Services",
+      "url": "https://aws.amazon.com/message/12721/",
+      "published_at": "2021-12-10",
+      "source_tier": "tier1"
+    }
+  ],
+  "timeline": [
+    {
+      "occurred_at": "2021-12-07T07:35:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "Automated activity triggered a capacity management error causing front-end server overload in the Kinesis data plane.",
+      "confidence": "fact",
+      "source_ref": "Amazon Web Services",
+      "sequence_pos": 0
+    },
+    {
+      "occurred_at": "2021-12-07T09:23:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "AWS engineers identify the root cause and begin scaling the Kinesis front-end fleet.",
+      "confidence": "fact",
+      "source_ref": "Amazon Web Services",
+      "sequence_pos": 1
+    },
+    {
+      "occurred_at": "2021-12-07T14:00:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "Kinesis and most dependent services recover to full operation.",
+      "confidence": "fact",
+      "source_ref": "Amazon Web Services",
+      "sequence_pos": 2
+    }
+  ],
+  "causal_factors": [
+    {
+      "factor_type": "capacity-misconfiguration",
+      "description": "An automated capacity management activity added capacity in a way that overloaded the front-end Kinesis servers beyond their thread limits.",
+      "confidence": "fact",
+      "source_ref": "Amazon Web Services"
+    },
+    {
+      "factor_type": "hidden-dependency",
+      "description": "Multiple internal AWS services used Kinesis as a control plane channel, causing cascading errors when Kinesis degraded.",
+      "confidence": "inference",
+      "source_ref": "Amazon Web Services"
+    }
+  ],
+  "lessons": [
+    {
+      "category": "dependency-mapping",
+      "statement": "Hidden internal dependencies on shared infrastructure should be explicitly tracked and visible in service maps.",
+      "recommended_control": "Maintain a live service dependency graph and run regular dependency audits on critical infrastructure.",
+      "source_ref": "Amazon Web Services"
+    },
+    {
+      "category": "recovery-design",
+      "statement": "Services recovering from a dependency outage should use exponential backoff with jitter to prevent thundering herd re-triggers.",
+      "recommended_control": "Review retry and reconnect logic across all services that depend on shared control-plane infrastructure.",
+      "source_ref": "Amazon Web Services"
+    }
+  ]
+}

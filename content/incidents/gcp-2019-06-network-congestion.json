@@ -1,0 +1,60 @@
+{
+  "slug": "gcp-2019-06-network-congestion",
+  "title": "Google Cloud Network Congestion From a Misapplied Configuration Change",
+  "org": "Google Cloud",
+  "incident_date": "2019-06-02",
+  "summary": "A configuration change intended for a small number of servers in one region was applied to a larger set of servers across several neighboring regions. This reduced network capacity and caused significant congestion and elevated latency for Google Cloud and some Google services.",
+  "impact": "Elevated latency and packet loss for services in affected regions over multiple hours; some Google services were also affected.",
+  "failure_domain": "network-config",
+  "severity": "sev1",
+  "is_reconstruction": true,
+  "skill_tags": ["network", "configuration-management", "blast-radius", "incident-response"],
+  "sources": [
+    {
+      "publisher": "Google Cloud",
+      "url": "https://status.cloud.google.com/incident/cloud-networking/19009",
+      "published_at": "2019-06-06",
+      "source_tier": "tier1"
+    }
+  ],
+  "timeline": [
+    {
+      "occurred_at": "2019-06-02",
+      "tz_offset": "+00:00",
+      "description": "The configuration change takes effect and network congestion begins.",
+      "confidence": "inference",
+      "source_ref": "Google Cloud",
+      "sequence_pos": 0
+    },
+    {
+      "occurred_at": "2019-06-02",
+      "tz_offset": "+00:00",
+      "description": "Engineers diagnose the issue and restore capacity; exact times are not stated here.",
+      "confidence": "unknown",
+      "source_ref": "Google Cloud",
+      "sequence_pos": 1
+    }
+  ],
+  "causal_factors": [
+    {
+      "factor_type": "configuration-scope-error",
+      "description": "The change was applied to more servers and regions than intended, reducing network capacity.",
+      "confidence": "fact",
+      "source_ref": "Google Cloud"
+    },
+    {
+      "factor_type": "recovery-tooling-impact",
+      "description": "Congestion also hampered the network used by engineers to diagnose and repair the problem.",
+      "confidence": "inference",
+      "source_ref": "Google Cloud"
+    }
+  ],
+  "lessons": [
+    {
+      "category": "blast-radius",
+      "statement": "Configuration changes need validated scope limits so a mistake cannot span many regions.",
+      "recommended_control": "Enforce scope checks and keep an independent management path for recovery.",
+      "source_ref": "Google Cloud"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+ * Single light palette (WCAG 2.2 AA). Ratios use the WCAG 2.x relative-luminance
+ * formula and are asserted by lib/theme-contrast.test.ts.
+ *
+ *   token      value    on --color-bg   on --color-surface   threshold
+ *   fg         #1f2328  15.80:1         14.84:1              text >= 4.5
+ *   muted      #59636e   6.11:1          5.74:1              text >= 4.5
+ *   accent     #0550ae   7.59:1          7.13:1              text >= 4.5
+ *   danger     #b42318   6.57:1          6.17:1              text >= 4.5
+ *   success    #1a7f37   5.08:1          4.77:1              text >= 4.5
+ *   border     #818b98   3.45:1          3.24:1              UI >= 3
+ *   focus      #0969da   5.19:1          4.88:1              UI/focus >= 3
+ *   #ffffff on accent (filled buttons)   7.59:1              text >= 4.5
+ *
+ * bg #ffffff, surface #f6f8fa. One scheme only; no alternate-scheme tokens or media rules.
+ */
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #f6f8fa;
+  --color-border: #818b98;
+  --color-fg: #1f2328;
+  --color-muted: #59636e;
+  --color-accent: #0550ae;
+  --color-focus: #0969da;
+  --color-danger: #b42318;
+  --color-success: #1a7f37;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+html {
+  color-scheme: light;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 100%;
+  line-height: 1.6;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+/* Shared focus ring on every interactive element. */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

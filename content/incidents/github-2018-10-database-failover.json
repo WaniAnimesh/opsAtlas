@@ -1,0 +1,68 @@
+{
+  "slug": "github-2018-10-database-failover",
+  "title": "GitHub Database Failover After Brief Network Partition",
+  "org": "GitHub",
+  "incident_date": "2018-10-21",
+  "summary": "A brief loss of connectivity between GitHub's US East Coast network hub and its primary East Coast data center led automated MySQL failover to promote West Coast primaries. Writes then existed in both coasts, and reconciling the data led to degraded service for roughly a day.",
+  "impact": "Degraded GitHub service, with stale or inconsistent data shown and delayed webhook and Pages builds, until data consistency was restored.",
+  "failure_domain": "database-failover",
+  "severity": "sev1",
+  "is_reconstruction": true,
+  "skill_tags": ["database-failover", "split-brain", "replication", "incident-response"],
+  "sources": [
+    {
+      "publisher": "GitHub Engineering",
+      "url": "https://github.blog/2018-10-30-oct21-post-incident-analysis/",
+      "published_at": "2018-10-30",
+      "source_tier": "tier1"
+    }
+  ],
+  "timeline": [
+    {
+      "occurred_at": "2018-10-21T22:52:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "Connectivity between the East Coast network hub and the primary East Coast data center is lost for a short period.",
+      "confidence": "fact",
+      "source_ref": "GitHub Engineering",
+      "sequence_pos": 0
+    },
+    {
+      "occurred_at": "2018-10-21T22:54:00+00:00",
+      "tz_offset": "+00:00",
+      "description": "Automated orchestration promotes West Coast database primaries, so each coast holds writes the other lacks.",
+      "confidence": "inference",
+      "source_ref": "GitHub Engineering",
+      "sequence_pos": 1
+    },
+    {
+      "occurred_at": "2018-10-22",
+      "tz_offset": "+00:00",
+      "description": "Restoration of data consistency continues over many hours before full service returns.",
+      "confidence": "unknown",
+      "source_ref": "GitHub Engineering",
+      "sequence_pos": 2
+    }
+  ],
+  "causal_factors": [
+    {
+      "factor_type": "automated-failover",
+      "description": "Automated topology management reacted to a transient partition by promoting primaries in another region.",
+      "confidence": "fact",
+      "source_ref": "GitHub Engineering"
+    },
+    {
+      "factor_type": "cross-region-replication",
+      "description": "Cross-coast replication could not carry writes made on the original primaries, creating divergent data.",
+      "confidence": "inference",
+      "source_ref": "GitHub Engineering"
+    }
+  ],
+  "lessons": [
+    {
+      "category": "failover-design",
+      "statement": "Automated failover should tolerate transient network partitions rather than act on a single brief signal.",
+      "recommended_control": "Add damping and cross-region guardrails to automated promotion decisions.",
+      "source_ref": "GitHub Engineering"
+    }
+  ]
+}

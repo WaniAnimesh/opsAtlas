@@ -1,0 +1,58 @@
+[
+  {
+    "slug": "aws-us-east-1-2021-kinesis",
+    "title": "AWS US-EAST-1 Kinesis Overload and Cascading Failure",
+    "summary": "A capacity management error in AWS US-EAST-1 caused Amazon Kinesis to become overloaded, triggering a cascading failure across multiple dependent AWS services including Cognito, CloudWatch, and Lambda. The incident lasted approximately seven hours and affected a large number of customers.",
+    "skill_tags": [
+      "capacity-management",
+      "cascading-failures",
+      "observability",
+      "cloud-operations"
+    ],
+    "failure_domain": "retry-storm",
+    "severity": "sev1",
+    "org": "Amazon Web Services"
+  },
+  {
+    "slug": "cloudflare-2019-07-waf-regex",
+    "title": "Cloudflare Global Outage From WAF Regular Expression CPU Exhaustion",
+    "summary": "A new Web Application Firewall managed rule containing a regular expression with excessive backtracking was deployed globally. It exhausted CPU on machines handling HTTP traffic and produced 502 errors worldwide until the WAF was disabled with a global kill.",
+    "skill_tags": [
+      "change-management",
+      "global-rollout",
+      "regex",
+      "kill-switch"
+    ],
+    "failure_domain": "cpu-exhaustion",
+    "severity": "sev1",
+    "org": "Cloudflare"
+  },
+  {
+    "slug": "gcp-2019-06-network-congestion",
+    "title": "Google Cloud Network Congestion From a Misapplied Configuration Change",
+    "summary": "A configuration change intended for a small number of servers in one region was applied to a larger set of servers across several neighboring regions. This reduced network capacity and caused significant congestion and elevated latency for Google Cloud and some Google services.",
+    "skill_tags": [
+      "network",
+      "configuration-management",
+      "blast-radius",
+      "incident-response"
+    ],
+    "failure_domain": "network-config",
+    "severity": "sev1",
+    "org": "Google Cloud"
+  },
+  {
+    "slug": "github-2018-10-database-failover",
+    "title": "GitHub Database Failover After Brief Network Partition",
+    "summary": "A brief loss of connectivity between GitHub's US East Coast network hub and its primary East Coast data center led automated MySQL failover to promote West Coast primaries. Writes then existed in both coasts, and reconciling the data led to degraded service for roughly a day.",
+    "skill_tags": [
+      "database-failover",
+      "split-brain",
+      "replication",
+      "incident-response"
+    ],
+    "failure_domain": "database-failover",
+    "severity": "sev1",
+    "org": "GitHub"
+  }
+]

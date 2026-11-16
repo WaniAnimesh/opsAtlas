@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+.next/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Test coverage
+coverage/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.suo
+*.user
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local dev overrides
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Generated content bundle, Worker build output and local Wrangler state
+src/generated/
+dist-worker/
+.wrangler/

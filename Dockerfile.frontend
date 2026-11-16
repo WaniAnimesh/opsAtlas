@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# The frontend is its own npm package (src/frontend). The root package.json
+# only provides the `dev` script that delegates to it.
+COPY package.json ./package.json
+COPY src/frontend/package*.json ./src/frontend/
+
+RUN npm --prefix src/frontend ci
+
+EXPOSE 3000
+
+# CMD is overridden by docker-compose command (npm run dev)
+CMD ["npm", "run", "dev"]
