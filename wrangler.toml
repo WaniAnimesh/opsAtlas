@@ -1,4 +1,4 @@
-name = "opsatlas-api"
+name = "opsatlas"
 main = "src/worker.ts"
 compatibility_date = "2025-01-01"
 
