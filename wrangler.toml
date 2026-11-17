@@ -8,7 +8,7 @@ ALLOWED_ORIGINS = "https://opsatlas.pages.dev"   # production Pages domain; loca
 [[d1_databases]]
 binding = "DB"
 database_name = "opsatlas"
-database_id = "00000000-0000-0000-0000-000000000000"   # replace with the id printed by `wrangler d1 create opsatlas`
+database_id = "1f9bdf4b-f67f-409e-99a3-c3037da3c93f"   # replace with the id printed by `wrangler d1 create opsatlas`
 migrations_dir = "db/migrations"
 
 [[ratelimits]]
