@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "atlas-journeys.schema.json",
+  "title": "Decision Atlas problem-oriented journeys",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "title", "summary", "steps"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      "title": { "type": "string" },
+      "summary": { "type": "string" },
+      "steps": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entity", "why"],
+          "properties": { "entity": { "type": "string" }, "why": { "type": "string", "minLength": 1 } }
+        }
+      }
+    }
+  }
+}

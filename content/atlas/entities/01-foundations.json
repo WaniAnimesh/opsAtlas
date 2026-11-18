@@ -1,0 +1,261 @@
+[
+  {
+    "id": "scaling-fundamentals",
+    "title": "Scaling Fundamentals",
+    "type": "concept",
+    "layer": "foundations",
+    "subcategory": "scaling",
+    "secondaryLayers": ["performance"],
+    "description": "What scaling actually means, how to find the real bottleneck, and which levers exist before changing architecture.",
+    "tags": ["scaling", "bottleneck", "capacity", "throughput", "latency"],
+    "aliases": ["scalability", "how to scale"],
+    "problems": ["I need to scale my system", "my application is slow under load", "we are running out of capacity", "how should I scale a monolith"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "The Amazon Builders' Library", "url": "https://aws.amazon.com/builders-library/", "publisher": "AWS" }
+    ],
+    "sections": {
+      "overview": "Scaling is the ability to handle more work (requests, data, users, teams) without a proportional rise in cost, latency or failure rate. 'We need to scale' usually hides a more specific problem: one resource is saturated, one dependency is slow, or one team is blocked.",
+      "context": "Scaling applies at three levels that are often confused: workload scaling (more traffic), data scaling (more state), and organizational scaling (more engineers changing the same system). Each has different fixes. Splitting into microservices addresses the third much more than the first.",
+      "assumptions": ["You can measure where time and resources go today (latency percentiles, CPU, memory, connection pools, database load).", "Traffic growth is expected to continue, not a one-off spike."],
+      "whenToUse": ["Before any topology change: identify the saturated resource with measurements.", "When p95/p99 latency rises with load while averages stay flat.", "When one component (usually the database) dominates resource usage."],
+      "whenNotToUse": ["Do not redesign for scale on projected numbers alone; most systems hit organizational limits before technical ones.", "Do not treat a single slow query or missing index as an architecture problem."],
+      "alternatives": ["Vertical scaling: bigger machines, often the cheapest first step.", "Horizontal scaling of stateless tiers behind a load balancer.", "Caching to remove repeated work.", "Asynchronous processing to move work off the request path.", "Read replicas or sharding when the database is the bottleneck."],
+      "failureModes": ["Scaling the wrong tier: adding app servers while the database connection pool is the limit.", "Moving the bottleneck: caches that shift load into a thundering herd on expiry.", "Assuming stateless services are free to scale when they share one stateful dependency."],
+      "implementation": ["Establish load tests that reproduce the production bottleneck.", "Track saturation metrics (utilization, queue depth, pool wait time) not only error rates.", "Write down the expected growth and the limit of the current design."],
+      "summary": "Find the bottleneck, apply the cheapest lever that removes it, and only change system topology when the bottleneck is organizational or the cheaper levers are exhausted."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "monolith-vs-microservices", "note": "Many teams reach for microservices when they say 'scale'. Knowing which kind of scaling you need tells you whether a topology change helps." },
+      { "type": "prerequisite-for", "target": "vertical-vs-horizontal-scaling", "note": "The first concrete scaling choice for any tier." },
+      { "type": "related-to", "target": "caching", "note": "Caching removes repeated work and is usually the cheapest scaling lever." },
+      { "type": "related-to", "target": "read-replicas", "note": "The usual first step when the database is the bottleneck." },
+      { "type": "related-to", "target": "queue-buffering", "note": "Moves bursty work off the request path." },
+      { "type": "deepens", "target": "cost-vs-performance", "note": "Every scaling lever has a cost curve." }
+    ]
+  },
+  {
+    "id": "vertical-vs-horizontal-scaling",
+    "title": "Vertical vs Horizontal Scaling",
+    "type": "decision",
+    "layer": "foundations",
+    "subcategory": "scaling",
+    "secondaryLayers": ["compute", "performance"],
+    "description": "Whether to add capacity by using bigger machines or more machines, and what each choice does to state, cost and failure modes.",
+    "question": "Should we scale this tier up (bigger machines) or out (more machines)?",
+    "tags": ["scaling", "scale up", "scale out", "capacity", "autoscaling"],
+    "aliases": ["scale up vs scale out"],
+    "problems": ["my server is maxed out", "should I add more servers or bigger servers"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Vertical scaling increases the resources of a single node. Horizontal scaling adds nodes and distributes work among them. Most production systems use both: horizontal for stateless tiers, vertical for the primary database until that is no longer enough.",
+      "context": "The deciding factor is state. Stateless request handlers scale out easily behind a load balancer. Stateful components (databases, caches with affinity, in-memory sessions) need replication or partitioning to scale out, which brings consistency questions.",
+      "assumptions": ["Cloud instance sizes are available up to very large machines.", "The tier in question can be load-balanced if it is stateless."],
+      "whenToUse": ["Scale up when the component is stateful, the growth curve is moderate, and simplicity matters more than redundancy.", "Scale out when the component is stateless, you need redundancy across zones, or load varies enough that elasticity saves money."],
+      "whenNotToUse": ["Avoid scaling up as the only answer for a single-instance tier that needs high availability; a bigger box is still one box.", "Avoid scaling out a stateful component before you have a partitioning or replication strategy."],
+      "alternatives": ["Caching to reduce load instead of adding capacity.", "Queue buffering to smooth peaks.", "Read replicas for read-heavy databases."],
+      "operations": "Scale-out tiers need health checks, load balancing, deployment orchestration and autoscaling policies. Scale-up tiers need maintenance windows or failover for resizing.",
+      "cost": "Large instances cost more per unit of capacity at the top end, and you pay for peak capacity all the time. Horizontal tiers can follow demand but add load balancer and coordination overhead.",
+      "summary": "Scale stateless tiers out across zones from day one; scale stateful tiers up until measurement shows the ceiling is near, then plan replication or sharding."
+    },
+    "tradeoffs": {
+      "options": ["Vertical (scale up)", "Horizontal (scale out)"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Simple pricing; premium at large sizes; pay for peak", "Can follow demand; extra load balancing and coordination cost"] },
+        { "dimension": "Reliability", "values": ["Single node remains a single point of failure", "Redundancy across nodes and zones"] },
+        { "dimension": "Scalability", "values": ["Hard ceiling at the largest instance", "Near-linear for stateless work"] },
+        { "dimension": "Complexity", "values": ["Minimal application change", "Requires statelessness, load balancing, distributed state"] },
+        { "dimension": "Operations", "values": ["Resizing may need downtime or failover", "Autoscaling, health checks, rolling deploys"] },
+        { "dimension": "Flexibility", "values": ["Easy to undo", "Hard to undo once state is partitioned"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Vertical (scale up)", "chooseWhen": ["Stateful primary databases", "Moderate, predictable growth", "Small team that values simplicity"], "avoidWhen": ["The tier must survive a node or zone failure without manual action"] },
+      { "option": "Horizontal (scale out)", "chooseWhen": ["Stateless web and API tiers", "Spiky traffic", "Multi-zone redundancy is required"], "avoidWhen": ["State is not yet partitioned or replicated"] }
+    ],
+    "relations": [
+      { "type": "introduces-risk", "target": "single-point-of-failure", "note": "Relying only on bigger machines leaves one node carrying everything." },
+      { "type": "precedes", "target": "read-replicas", "note": "When the database outgrows vertical scaling, replicas are the next step for reads." },
+      { "type": "precedes", "target": "sharding", "note": "When writes outgrow one primary, partitioning is the next step." },
+      { "type": "related-to", "target": "regions-and-availability-zones", "note": "Horizontal scaling is what makes multi-zone redundancy possible." }
+    ]
+  },
+  {
+    "id": "cost-vs-performance",
+    "title": "Cost vs Performance",
+    "type": "concept",
+    "layer": "foundations",
+    "subcategory": "engineering-economics",
+    "secondaryLayers": ["cost", "performance"],
+    "description": "How to reason about paying for speed, and when a performance gain stops being worth its cost.",
+    "tags": ["cost", "performance", "latency", "economics", "finops"],
+    "aliases": ["reduce cost vs improve performance"],
+    "problems": ["my infrastructure costs are increasing", "how can I reduce cloud costs", "is this optimization worth it"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Performance improvements cost money (more capacity, faster hardware, CDNs, caches) or engineering time (optimization work, added complexity). The right level of performance is the one where the next improvement is worth less to the business than it costs.",
+      "context": "Latency has business value only up to a point, and that point differs by product. A checkout page, a trading API and a nightly report have very different curves. Cost also has two parts: direct infrastructure spend and indirect operational cost of running more complex systems.",
+      "assumptions": ["You can attach some business value to latency or throughput (conversion, SLA penalties, user retention).", "You can attribute infrastructure cost to the feature or service."],
+      "whenToUse": ["Before buying capacity to fix latency, check whether caching or query work is cheaper.", "When cost grows faster than usage: measure cost per request or per customer."],
+      "whenNotToUse": ["Do not optimize cost on systems still searching for product fit; engineering time is usually the scarcer resource."],
+      "examples": ["A CDN often improves latency and reduces origin cost at the same time; it is one of the few changes that wins on both.", "Moving to the largest database instance fixes latency but may cost more than the query optimization that would have fixed it."],
+      "summary": "Express both sides in the same unit (cost per request, cost per customer) and stop optimizing when the marginal gain is smaller than the marginal cost."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "unit-economics", "note": "Unit economics turns the cost-performance tradeoff into numbers you can track." },
+      { "type": "related-to", "target": "cdn-vs-no-cdn", "note": "A CDN is a common case where cost and performance improve together." },
+      { "type": "related-to", "target": "caching", "note": "Caching trades memory and freshness for latency and lower backend cost." },
+      { "type": "related-to", "target": "cost-benefit-analysis", "note": "The framework for making the tradeoff explicit." }
+    ]
+  },
+  {
+    "id": "operational-debt",
+    "title": "Operational Debt",
+    "type": "concept",
+    "layer": "foundations",
+    "subcategory": "engineering-economics",
+    "secondaryLayers": ["reliability", "platform-engineering"],
+    "description": "The accumulated cost of running systems that are hard to deploy, observe, upgrade or recover, separate from code-level technical debt.",
+    "tags": ["operational debt", "technical debt", "toil", "maintenance"],
+    "aliases": ["ops debt", "toil"],
+    "problems": ["our on-call is exhausting", "upgrades keep getting postponed", "only one person knows how to deploy"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Technical debt lives in code. Operational debt lives in how systems are run: manual deployments, unpatched clusters, missing runbooks, alerts nobody trusts, and infrastructure only one person understands. It is paid in on-call hours, slow recovery and risky changes.",
+      "context": "Operational debt grows fastest when teams adopt infrastructure they cannot yet operate, such as self-managed clusters, streaming platforms or service meshes. Each component adds upgrade cycles, failure modes and on-call knowledge.",
+      "warningSigns": ["Version upgrades are repeatedly postponed.", "Incidents need the same person every time.", "Toil (manual, repetitive operational work) consumes a growing share of engineering time.", "Alerts are routinely ignored."],
+      "examples": ["A three-person team running self-managed Kubernetes, Kafka and a service mesh carries operational debt equal to several full-time roles.", "A managed database with automated backups removes a whole class of operational debt for a modest premium."],
+      "summary": "Count operational cost when you adopt a technology. Managed services, fewer components and automation are the main ways to pay operational debt down."
+    },
+    "relations": [
+      { "type": "related-to", "target": "managed-services-vs-self-managed", "note": "Managed services convert operational debt into a predictable bill." },
+      { "type": "contributes-to", "target": "knowledge-silos", "note": "Undocumented operational knowledge concentrates in a few people." },
+      { "type": "related-to", "target": "premature-kubernetes", "note": "A common source of operational debt in small teams." }
+    ]
+  },
+  {
+    "id": "consistency-models",
+    "title": "Consistency Models",
+    "type": "concept",
+    "layer": "foundations",
+    "subcategory": "distributed-systems",
+    "secondaryLayers": ["databases"],
+    "description": "Strong, causal and eventual consistency, and how the choice shapes databases, caches and messaging.",
+    "tags": ["consistency", "eventual consistency", "strong consistency", "cap", "pacelc", "replication"],
+    "aliases": ["eventual consistency", "strong consistency", "CAP theorem"],
+    "problems": ["users see stale data", "data is different between services"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "Designing Data-Intensive Applications (Kleppmann), chapters 5 and 9", "url": "https://dataintensive.net/", "publisher": "O'Reilly" }
+    ],
+    "sections": {
+      "overview": "A consistency model defines what a reader may observe after a write. Strong consistency (linearizability) means every read sees the latest write. Eventual consistency means replicas converge if writes stop, with no bound on when. Many useful models sit in between, such as read-your-writes and causal consistency.",
+      "context": "Consistency is decided every time you add a replica, cache or asynchronous step. A read replica, a CDN cache and an event-driven projection are all eventually consistent views of a source of truth.",
+      "reasoning": ["During a network partition, a replicated system must choose between rejecting requests (consistency) and serving possibly stale data (availability). This is the CAP result.", "Even without partitions, stronger consistency costs latency because replicas must coordinate (the PACELC framing)."],
+      "application": ["Identify which reads must be strongly consistent (balances, inventory reservations, permissions) and which tolerate staleness (feeds, analytics, search).", "Route only the strict reads to the primary; serve the rest from replicas or caches."],
+      "limitations": ["Consistency labels from vendors are not always precise; test behaviour under failover.", "Application-level invariants can still break under strong storage consistency if transactions are scoped wrongly."],
+      "summary": "Decide consistency per read path, not per system."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "sql-vs-nosql", "note": "Consistency guarantees are a major difference between database families." },
+      { "type": "prerequisite-for", "target": "single-primary-vs-multi-primary", "note": "Multi-primary writes force you to choose a conflict resolution model." },
+      { "type": "prerequisite-for", "target": "event-driven-architecture", "note": "Event-driven systems are eventually consistent by design." },
+      { "type": "related-to", "target": "read-replicas", "note": "Replicas introduce replication lag." },
+      { "type": "related-to", "target": "caching", "note": "Every cache is a consistency decision." }
+    ]
+  },
+  {
+    "id": "caching",
+    "title": "Caching",
+    "type": "concept",
+    "layer": "performance",
+    "subcategory": "application-performance",
+    "secondaryLayers": ["foundations"],
+    "description": "Storing results closer to the consumer to cut latency and backend load, and the freshness and failure risks that come with it.",
+    "tags": ["cache", "redis", "memcached", "cdn", "ttl", "performance", "database load"],
+    "aliases": ["cache", "caching layers", "redis cache"],
+    "problems": ["how do I reduce database load", "my pages are slow", "the database is a bottleneck"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A cache keeps a copy of data or computed results so repeated requests skip the expensive path. Caches exist at every layer: browser, CDN, reverse proxy, application memory, distributed caches such as Redis, and database buffer pools.",
+      "context": "Caching is usually the cheapest way to reduce database load and latency. It works best for read-heavy data with tolerable staleness and a skewed access pattern where a small set of keys gets most traffic.",
+      "whenToUse": ["Read-heavy workloads with repeated keys.", "Expensive computations or downstream calls with stable results.", "Static or semi-static content (via CDN)."],
+      "whenNotToUse": ["Data that must be strongly consistent on every read.", "Write-heavy data with little reuse.", "As a substitute for fixing an obviously bad query."],
+      "alternatives": ["Read replicas for read scaling with SQL semantics.", "Precomputed materialized views.", "Query and index optimization."],
+      "failureModes": ["Cache stampede: many requests miss at once and overload the backend (see Thundering Herd).", "Stale data served after updates because invalidation was missed.", "Cold cache after deploy or failover sends full load to an under-provisioned database.", "The system silently depends on cache hit rate; losing the cache becomes an outage."],
+      "implementation": ["Choose a strategy: cache-aside, read-through, write-through or write-behind.", "Add jitter to TTLs and use request coalescing to avoid stampedes.", "Size the backend for a cache-loss scenario or shed load when hit rate drops.", "Monitor hit rate, eviction rate and key cardinality."],
+      "summary": "Cache when reads repeat and staleness is acceptable; plan for the cache being empty."
+    },
+    "relations": [
+      { "type": "mitigates", "target": "cascade-failures", "note": "Serving cached responses can keep a system up while a dependency is down." },
+      { "type": "introduces-risk", "target": "thundering-herd", "note": "Synchronized expiry or a cold cache sends all requests to the backend at once." },
+      { "type": "alternative-to", "target": "read-replicas", "note": "Both reduce load on the primary; caches trade freshness for speed, replicas keep SQL." },
+      { "type": "precedes", "target": "cdn-vs-no-cdn", "note": "A CDN is caching at the network edge." }
+    ]
+  },
+  {
+    "id": "cloud-service-models",
+    "title": "Cloud Service Models (IaaS, PaaS, SaaS, FaaS)",
+    "type": "concept",
+    "layer": "foundations",
+    "subcategory": "cloud",
+    "secondaryLayers": ["compute"],
+    "description": "How much of the stack you operate under IaaS, PaaS, SaaS and FaaS, and what that means for responsibility and flexibility.",
+    "tags": ["iaas", "paas", "saas", "faas", "serverless", "shared responsibility"],
+    "aliases": ["IaaS", "PaaS", "SaaS", "FaaS"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Cloud service models describe where the provider's responsibility ends and yours begins. IaaS gives you virtual machines and networks. PaaS runs your application for you. FaaS runs individual functions on demand. SaaS delivers a finished product.",
+      "context": "Moving up the stack trades control for less operational work. The shared responsibility model applies at every level: even with SaaS you own identity, access and data classification.",
+      "whenToUse": ["IaaS when you need control over the OS, network or unusual workloads.", "PaaS or FaaS when the workload fits the platform's constraints and the team is small.", "SaaS when the capability is not a differentiator."],
+      "whenNotToUse": ["Avoid IaaS by default for teams without operations capacity.", "Avoid FaaS for long-running, latency-critical or stateful connection-heavy workloads."],
+      "summary": "Pick the highest level of abstraction whose constraints your workload can live with."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "containers-vs-serverless", "note": "The containers vs serverless choice is a choice between service models." },
+      { "type": "prerequisite-for", "target": "managed-services-vs-self-managed", "note": "Service models define what 'managed' means." },
+      { "type": "related-to", "target": "aws-lambda", "note": "A widely used FaaS offering." }
+    ]
+  },
+  {
+    "id": "regions-and-availability-zones",
+    "title": "Regions and Availability Zones",
+    "type": "concept",
+    "layer": "foundations",
+    "subcategory": "cloud",
+    "secondaryLayers": ["reliability"],
+    "description": "The physical failure domains of the cloud and how to place workloads across them.",
+    "tags": ["regions", "availability zones", "az", "multi-region", "failure domains"],
+    "aliases": ["AZ", "multi-AZ", "multi-region"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A region is a geographic area with independent infrastructure. An availability zone is one or more data centers within a region, isolated from the others for power, cooling and networking but connected with low latency.",
+      "context": "Zones are the main tool for high availability inside a region at low latency cost. Regions protect against regional events but bring data replication, latency and cost problems.",
+      "whenToUse": ["Spread stateless tiers and database replicas across at least two zones for most production workloads.", "Consider multiple regions when recovery objectives or data residency require it."],
+      "whenNotToUse": ["Multi-region active-active is rarely justified before you have proven single-region multi-zone reliability."],
+      "failureModes": ["Hidden single-region dependencies, such as a control plane or identity service in one region.", "Cross-zone data transfer costs that grow unnoticed."],
+      "summary": "Multi-zone is the default for production; multi-region is a business decision with a real cost."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "active-active-vs-active-passive", "note": "Multi-region strategies build on regional failure domains." },
+      { "type": "mitigates", "target": "single-point-of-failure", "note": "Zone redundancy removes data-center-level single points of failure." },
+      { "type": "related-to", "target": "does-your-business-need-five-nines", "note": "Availability targets drive how many failure domains you need." }
+    ]
+  }
+]

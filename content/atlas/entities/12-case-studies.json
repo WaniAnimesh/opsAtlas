@@ -1,0 +1,125 @@
+[
+  {
+    "id": "cloudflare-edge-platform",
+    "title": "Cloudflare: Anycast Edge, WAF and Global Configuration",
+    "type": "case-study",
+    "layer": "case-studies",
+    "subcategory": "companies",
+    "secondaryLayers": ["networking", "security"],
+    "description": "How a global anycast edge network delivers CDN, WAF and edge compute, and what the July 2019 WAF outage shows about global configuration changes.",
+    "tags": ["cloudflare", "anycast", "cdn", "waf", "edge", "configuration", "regex"],
+    "aliases": ["Cloudflare"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "Details of the Cloudflare outage on July 2, 2019", "url": "https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/", "publisher": "Cloudflare" },
+      { "title": "What is Anycast?", "url": "https://www.cloudflare.com/learning/cdn/glossary/anycast-network/", "publisher": "Cloudflare" }
+    ],
+    "incidents": ["cloudflare-2019-07-waf-regex"],
+    "sections": {
+      "overview": "Cloudflare runs a large anycast network: the same IP addresses are announced from many locations, so users reach a nearby data center. CDN caching, DNS, WAF and Workers run on that shared edge.",
+      "context": "A shared global edge gives low latency and absorbs attacks, but it also means a change deployed everywhere can affect every customer at once.",
+      "challenge": "Deploy security rules (WAF) quickly enough to respond to new threats, across a global fleet, without risking global impact.",
+      "facts": ["On July 2, 2019, a new WAF managed rule containing a regular expression that backtracked excessively was deployed globally.", "CPU on machines handling HTTP/HTTPS traffic spiked to near 100% worldwide, causing widespread 502 errors.", "Cloudflare's postmortem describes the rule being deployed globally in one step and lists changes to rollout procedures and the regex engine as follow-ups."],
+      "interpretation": ["The edge acted as a single failure domain for configuration even though it was physically distributed.", "Fast global rollout of security rules trades speed of protection for blast radius; staged rollout limits the latter."],
+      "lessons": ["Treat configuration like code: stage, canary and monitor.", "Bound the cost of untrusted or complex inputs (here: regex execution).", "Physical distribution does not remove logical single points of failure."],
+      "summary": "A global edge improves latency and resilience against attacks, but change management must assume any global push can cause a global outage."
+    },
+    "relations": [
+      { "type": "example-of", "target": "cdn-vs-no-cdn", "note": "A large-scale CDN and edge network." },
+      { "type": "example-of", "target": "single-point-of-failure", "note": "Global configuration push as a logical SPOF." },
+      { "type": "related-to", "target": "cloudflare-r2", "note": "Part of Cloudflare's platform." }
+    ]
+  },
+  {
+    "id": "github-monolith-evolution",
+    "title": "GitHub: Monolith Evolution and the October 2018 Failover",
+    "type": "case-study",
+    "layer": "case-studies",
+    "subcategory": "companies",
+    "secondaryLayers": ["architecture-decisions", "databases"],
+    "description": "A large, long-lived Rails monolith backed by MySQL, and the cross-site database failover incident of October 2018.",
+    "tags": ["github", "monolith", "rails", "mysql", "failover", "orchestrator"],
+    "aliases": ["GitHub"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "October 21 post-incident analysis", "url": "https://github.blog/2018-10-30-oct21-post-incident-analysis/", "publisher": "GitHub" },
+      { "title": "Building GitHub with Ruby and Rails", "url": "https://github.blog/engineering/architecture-optimization/building-github-with-ruby-and-rails/", "publisher": "GitHub" }
+    ],
+    "incidents": ["github-2018-10-database-failover"],
+    "sections": {
+      "overview": "GitHub has publicly described running its main application as a large Ruby on Rails monolith over many years, alongside a growing set of services, with MySQL as a core data store.",
+      "challenge": "Scale a monolith and its relational data tier for a very large user base while keeping the system available across data centers.",
+      "facts": ["On October 21, 2018, a brief network partition between GitHub's US East Coast data center and its primary US East Coast network hub led automated failover tooling to promote database primaries in a West Coast data center.", "When connectivity returned, writes existed in both locations that had not been replicated; GitHub chose to prioritize data integrity, and the site was degraded for about 24 hours.", "GitHub's analysis lists changes to failover tooling configuration and to its approach to cross-region operation."],
+      "interpretation": ["A monolith was not the cause; cross-site single-primary failover was the risk.", "Automated failover that is correct for a dead primary can be wrong for a short partition. Fencing and topology awareness matter."],
+      "lessons": ["Monoliths can scale to very large organizations with investment in modularity and tooling.", "Test failover for partitions, not only for node death.", "Know your RPO before automation chooses it for you."],
+      "summary": "A public example that monoliths scale, and that multi-site database failover is one of the hardest reliability problems."
+    },
+    "relations": [
+      { "type": "example-of", "target": "modular-monolith-vs-microservices", "note": "Long-term monolith with selective services." },
+      { "type": "example-of", "target": "single-primary-vs-multi-primary", "note": "Cross-site single-primary failover risks." },
+      { "type": "related-to", "target": "rto-and-rpo", "note": "Data integrity was chosen over recovery time." }
+    ]
+  },
+  {
+    "id": "netflix-chaos-engineering",
+    "title": "Netflix: Chaos Engineering",
+    "type": "case-study",
+    "layer": "case-studies",
+    "subcategory": "companies",
+    "secondaryLayers": ["reliability"],
+    "description": "How Netflix popularized deliberately injecting failures in production to build resilient cloud systems.",
+    "tags": ["netflix", "chaos monkey", "chaos engineering", "simian army", "resilience", "aws"],
+    "aliases": ["Netflix", "Chaos Monkey"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "The Netflix Simian Army", "url": "https://netflixtechblog.com/the-netflix-simian-army-16e57fbab116", "publisher": "Netflix Technology Blog" },
+      { "title": "Principles of Chaos Engineering", "url": "https://principlesofchaos.org/", "publisher": "principlesofchaos.org" }
+    ],
+    "sections": {
+      "overview": "After moving to AWS, Netflix built tools that randomly terminate instances (Chaos Monkey) and simulate larger failures, so engineers design services that tolerate them.",
+      "challenge": "Run a large streaming service on cloud infrastructure where instances and dependencies fail routinely.",
+      "facts": ["Netflix's 2011 'Simian Army' post describes Chaos Monkey randomly disabling production instances and other tools simulating larger outages.", "Netflix engineers later co-authored the Principles of Chaos Engineering."],
+      "interpretation": ["Regular, small, expected failures shift design incentives toward redundancy and graceful degradation.", "The practice depends on strong observability and automation; copying the tools without those is risky."],
+      "lessons": ["Make failure routine so resilience is tested continuously.", "Start with small blast radius and clear abort conditions."],
+      "summary": "Resilience is a habit you practise."
+    },
+    "relations": [
+      { "type": "example-of", "target": "chaos-engineering", "note": "The canonical example." },
+      { "type": "example-of", "target": "microservices", "note": "A large service-oriented architecture." }
+    ]
+  },
+  {
+    "id": "amazon-service-oriented-architecture",
+    "title": "Amazon: Service-Oriented Architecture and Ownership",
+    "type": "case-study",
+    "layer": "case-studies",
+    "subcategory": "companies",
+    "secondaryLayers": ["architecture-decisions"],
+    "description": "Amazon's move from a monolithic application to services owned end to end by small teams.",
+    "tags": ["amazon", "soa", "service ownership", "you build it you run it", "two pizza teams"],
+    "aliases": ["Amazon", "you build it, you run it"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "A Conversation with Werner Vogels (ACM Queue, 2006)", "url": "https://queue.acm.org/detail.cfm?id=1142065", "publisher": "ACM Queue" }],
+    "sections": {
+      "overview": "In a 2006 interview, Amazon's CTO Werner Vogels described how Amazon moved from a two-tier monolith to a service-oriented architecture in which teams own their services from development to operations.",
+      "challenge": "Let many teams build and evolve features independently while the business grew rapidly.",
+      "facts": ["Vogels described services accessed only through their interfaces, with no direct database access between them.", "He described developers operating their own services ('you build it, you run it')."],
+      "interpretation": ["The architectural change and the ownership model were introduced together; the second is what made the first work.", "This is Conway's Law applied deliberately."],
+      "lessons": ["Service boundaries need owning teams with operational responsibility.", "Interface-only access enables independent evolution."],
+      "summary": "Services succeeded at Amazon because ownership changed with them."
+    },
+    "relations": [
+      { "type": "example-of", "target": "microservices", "note": "Early large-scale service-oriented architecture." },
+      { "type": "example-of", "target": "conways-law", "note": "Team structure and system structure changed together." },
+      { "type": "example-of", "target": "database-per-service", "note": "No direct database access between services." }
+    ]
+  }
+]

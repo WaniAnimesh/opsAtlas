@@ -1,0 +1,219 @@
+[
+  {
+    "id": "service-discovery",
+    "title": "Service Discovery",
+    "type": "pattern",
+    "layer": "networking",
+    "subcategory": "api-delivery",
+    "secondaryLayers": ["architecture-decisions"],
+    "description": "How services find the network locations of healthy instances of other services as they scale and redeploy.",
+    "tags": ["service discovery", "dns", "consul", "kubernetes dns", "registry", "load balancing"],
+    "aliases": ["service registry"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "In a dynamic environment, instances come and go. Service discovery keeps a registry of healthy instances and lets callers resolve a logical name (orders-service) to current addresses.",
+      "context": "Discovery becomes necessary as soon as services call each other and instances change addresses. It is either client-side (the caller queries a registry and load-balances) or server-side (the caller hits a stable address such as a load balancer or cluster DNS name).",
+      "whenToUse": ["Any system of multiple services with autoscaling or rolling deploys."],
+      "whenNotToUse": ["A monolith behind one load balancer does not need a discovery system."],
+      "alternatives": ["Kubernetes Services and cluster DNS.", "Consul or similar registries.", "Cloud load balancers with stable DNS names.", "Service mesh, which bundles discovery with traffic policy."],
+      "failureModes": ["Stale registrations routing traffic to dead instances.", "DNS caching beyond TTL in clients.", "The registry itself becoming a single point of failure."],
+      "implementation": ["Use health checks tied to readiness, not just process liveness.", "Respect DNS TTLs in client libraries.", "Run the registry highly available, or use the platform's built-in mechanism."],
+      "summary": "Needed once services talk to each other; prefer the mechanism your platform already provides."
+    },
+    "relations": [
+      { "type": "precedes", "target": "kubernetes", "note": "Kubernetes provides orchestration and built-in service discovery, which is why discovery needs often lead teams to it." },
+      { "type": "related-to", "target": "consul", "note": "A standalone registry and discovery system." },
+      { "type": "related-to", "target": "service-mesh", "note": "Meshes combine discovery with traffic policy." },
+      { "type": "introduces-risk", "target": "single-point-of-failure", "note": "A non-redundant registry can take down all service-to-service traffic." }
+    ]
+  },
+  {
+    "id": "api-gateway",
+    "title": "API Gateway",
+    "type": "pattern",
+    "layer": "networking",
+    "subcategory": "api-delivery",
+    "secondaryLayers": ["security"],
+    "description": "A single entry point for API clients that handles routing, authentication, rate limiting and API lifecycle concerns.",
+    "tags": ["api gateway", "kong", "envoy", "nginx", "rate limiting", "authentication", "edge"],
+    "aliases": ["gateway", "Kong", "AWS API Gateway"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "An API gateway sits between clients and backend services. It routes requests, enforces authentication and authorization, applies rate limits and quotas, transforms protocols and collects API analytics.",
+      "context": "Gateways matter once there are many backend services or external consumers. They centralize cross-cutting concerns so each service does not reimplement them. Ingress handles cluster routing; a gateway handles API management.",
+      "whenToUse": ["Many services exposed to external clients.", "Public or partner APIs needing keys, quotas and versioning.", "Backend-for-frontend aggregation."],
+      "whenNotToUse": ["A single service behind a load balancer.", "When the gateway would hold business logic; keep it thin."],
+      "alternatives": ["Reverse proxy (NGINX, Envoy) with minimal policy.", "Cloud-managed gateways.", "Service mesh for internal traffic only."],
+      "failureModes": ["The gateway as a single point of failure or bottleneck.", "Business logic creeping into gateway plugins.", "Gateway-level retries amplifying backend overload."],
+      "summary": "Centralize edge concerns in a thin, redundant gateway."
+    },
+    "relations": [
+      { "type": "precedes", "target": "observability", "note": "Once traffic fans out from a gateway to many services, you need observability to see what happens to each request." },
+      { "type": "related-to", "target": "nginx", "note": "Commonly used as a reverse proxy or gateway." },
+      { "type": "related-to", "target": "envoy", "note": "Data plane of several gateways." },
+      { "type": "introduces-risk", "target": "single-point-of-failure", "note": "All external traffic passes through it." },
+      { "type": "mitigates", "target": "thundering-herd", "note": "Rate limiting at the edge protects backends from bursts." }
+    ]
+  },
+  {
+    "id": "nginx",
+    "title": "NGINX",
+    "type": "technology",
+    "layer": "networking",
+    "subcategory": "load-balancing",
+    "description": "A high-performance web server, reverse proxy and load balancer, also widely used as a Kubernetes ingress controller.",
+    "tags": ["nginx", "reverse proxy", "load balancer", "web server", "ingress"],
+    "aliases": ["reverse proxy"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "NGINX documentation", "url": "https://nginx.org/en/docs/", "publisher": "nginx.org" }],
+    "sections": {
+      "overview": "NGINX is an event-driven server used for static content, reverse proxying, TLS termination, load balancing and caching.",
+      "context": "It typically sits at the edge of an application tier or cluster, between a cloud load balancer and application processes.",
+      "whenToUse": ["Reverse proxy and TLS termination.", "Simple L7 load balancing and caching."],
+      "whenNotToUse": ["Dynamic configuration at large scale is easier with API-driven proxies such as Envoy."],
+      "summary": "A dependable default reverse proxy."
+    },
+    "relations": [
+      { "type": "implements", "target": "api-gateway", "note": "Can act as a basic gateway with routing and rate limiting." },
+      { "type": "implements", "target": "ingress", "note": "A common ingress controller." },
+      { "type": "competes-with", "target": "envoy", "note": "Overlapping proxy roles." }
+    ]
+  },
+  {
+    "id": "envoy",
+    "title": "Envoy",
+    "type": "technology",
+    "layer": "networking",
+    "subcategory": "load-balancing",
+    "description": "A cloud-native L4/L7 proxy with API-driven configuration, used in service meshes and API gateways.",
+    "tags": ["envoy", "proxy", "service mesh", "xds", "load balancing"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Envoy", "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy", "publisher": "envoyproxy.io" }],
+    "sections": {
+      "overview": "Envoy is a proxy designed for service-oriented architectures. Its configuration can be updated dynamically through xDS APIs, and it exposes detailed telemetry.",
+      "context": "Envoy is the data plane for several service meshes and gateways, so it often appears indirectly.",
+      "whenToUse": ["Dynamic, API-driven traffic management.", "HTTP/2 and gRPC load balancing."],
+      "whenNotToUse": ["Configuring Envoy directly is complex; most teams use it through a control plane."],
+      "summary": "The building block behind many meshes and gateways."
+    },
+    "relations": [
+      { "type": "implements", "target": "service-mesh", "note": "Data plane for several meshes." },
+      { "type": "implements", "target": "api-gateway", "note": "Basis for several gateways." },
+      { "type": "implements", "target": "circuit-breaker", "note": "Supports outlier detection and connection limits." }
+    ]
+  },
+  {
+    "id": "consul",
+    "title": "Consul",
+    "type": "technology",
+    "layer": "networking",
+    "subcategory": "api-delivery",
+    "description": "HashiCorp's service registry, health checking and service networking tool.",
+    "tags": ["consul", "service discovery", "hashicorp", "registry"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Consul documentation", "url": "https://developer.hashicorp.com/consul/docs", "publisher": "HashiCorp" }],
+    "sections": {
+      "overview": "Consul maintains a catalog of services with health checks and exposes it through DNS and HTTP APIs. It also offers a service mesh and key-value configuration.",
+      "context": "Useful for discovery across mixed environments (VMs, multiple clusters) where Kubernetes DNS alone does not reach.",
+      "whenToUse": ["Discovery across VMs and multiple platforms."],
+      "whenNotToUse": ["Inside a single Kubernetes cluster, built-in discovery is usually enough."],
+      "summary": "Discovery for heterogeneous environments."
+    },
+    "relations": [
+      { "type": "implements", "target": "service-discovery", "note": "A dedicated registry and health-checking system." },
+      { "type": "competes-with", "target": "kubernetes", "note": "Overlaps with Kubernetes' built-in discovery inside clusters." }
+    ]
+  },
+  {
+    "id": "cdn-vs-no-cdn",
+    "title": "CDN vs No CDN",
+    "type": "decision",
+    "layer": "networking",
+    "subcategory": "cdn",
+    "secondaryLayers": ["performance", "cost"],
+    "description": "Whether to put a content delivery network in front of your origin, and what to cache at the edge.",
+    "question": "Should we put a CDN in front of our application?",
+    "tags": ["cdn", "edge", "caching", "cloudflare", "cloudfront", "fastly", "latency", "egress"],
+    "aliases": ["content delivery network", "edge caching"],
+    "problems": ["my site is slow for users far away", "egress costs are high", "how can I reduce cloud costs"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A CDN caches content at points of presence near users and proxies the rest to your origin. Modern CDNs also provide TLS termination, DDoS protection, WAF and edge compute.",
+      "context": "For most public web applications a CDN improves latency, reduces origin load and egress cost, and adds protection. The main design work is deciding what is cacheable and how to invalidate it.",
+      "whenToUse": ["Public web content and static assets.", "Global or geographically spread users.", "Origins that need protection from traffic spikes and attacks."],
+      "whenNotToUse": ["Purely internal or private-network applications.", "Highly personalized, uncacheable APIs where the only benefit would be TLS termination (still often worth it for protection)."],
+      "alternatives": ["Origin-side caching only.", "Multi-region origins (more expensive)."],
+      "cost": "CDN egress is often cheaper than cloud origin egress, and offloaded requests reduce origin compute.",
+      "failureModes": ["Caching personalized responses and leaking data between users.", "Mass invalidation or cache expiry sending a thundering herd to the origin.", "The CDN provider itself as a dependency; configuration pushes can have global impact."],
+      "summary": "Use a CDN for public web traffic by default. Be deliberate about cache keys, invalidation and what happens when the CDN misbehaves."
+    },
+    "tradeoffs": {
+      "options": ["CDN", "No CDN"],
+      "rows": [
+        { "dimension": "Cost", "values": ["CDN fees; lower origin egress and compute", "Full origin egress and compute"] },
+        { "dimension": "Performance", "values": ["Lower latency for distant users", "Latency depends on origin distance"] },
+        { "dimension": "Reliability", "values": ["Absorbs spikes; adds a provider dependency", "Origin takes all load"] },
+        { "dimension": "Security", "values": ["DDoS mitigation and WAF at the edge", "Origin exposed directly"] },
+        { "dimension": "Complexity", "values": ["Cache rules and invalidation", "None"] }
+      ]
+    },
+    "guidance": [
+      { "option": "CDN", "chooseWhen": ["Public web traffic", "Global users", "Static assets"] },
+      { "option": "No CDN", "chooseWhen": ["Internal tools", "Private networks"] }
+    ],
+    "relations": [
+      { "type": "mitigates", "target": "thundering-herd", "note": "Request collapsing at the edge reduces origin stampedes." },
+      { "type": "introduces-risk", "target": "single-point-of-failure", "note": "A single CDN provider becomes a dependency for all traffic." },
+      { "type": "related-to", "target": "cloudflare-edge-platform", "note": "A case study of a large CDN and edge network." },
+      { "type": "improves", "target": "unit-economics", "note": "Offloading traffic lowers cost per request." }
+    ]
+  },
+  {
+    "id": "l4-vs-l7-load-balancing",
+    "title": "L4 vs L7 Load Balancing",
+    "type": "comparison",
+    "layer": "networking",
+    "subcategory": "load-balancing",
+    "description": "Comparing connection-level (TCP/UDP) load balancing with request-level (HTTP) load balancing.",
+    "question": "Do we need request-aware (L7) load balancing, or is connection-level (L4) enough?",
+    "tags": ["load balancing", "l4", "l7", "nlb", "alb", "haproxy", "tcp", "http"],
+    "aliases": ["NLB vs ALB"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "L4 load balancers forward TCP/UDP connections without inspecting content. L7 load balancers parse HTTP and can route by host, path or header, terminate TLS and balance individual requests.",
+      "whenToUse": ["L4: non-HTTP protocols, very high throughput, static IPs, minimal latency.", "L7: HTTP routing, TLS termination, gRPC/HTTP/2 request-level balancing."],
+      "whenNotToUse": ["L4 balances connections, so long-lived HTTP/2 connections can pin load to a few backends.", "L7 adds processing cost and is another component that inspects traffic."],
+      "summary": "Use L7 for HTTP applications and L4 for raw throughput or non-HTTP traffic."
+    },
+    "tradeoffs": {
+      "options": ["L4", "L7"],
+      "rows": [
+        { "dimension": "Performance", "values": ["Lowest overhead", "Parsing and TLS cost"] },
+        { "dimension": "Flexibility", "values": ["Connection-level only", "Content-based routing"] },
+        { "dimension": "Operations", "values": ["Simple", "Rules, certificates, health checks per route"] }
+      ]
+    },
+    "guidance": [
+      { "option": "L4", "chooseWhen": ["Non-HTTP", "Extreme throughput", "Static IP needs"] },
+      { "option": "L7", "chooseWhen": ["HTTP routing", "gRPC", "TLS termination"] }
+    ],
+    "relations": [
+      { "type": "related-to", "target": "nginx", "note": "Can act as an L7 load balancer." },
+      { "type": "related-to", "target": "scaling-fundamentals", "note": "Load distribution is how horizontal scaling works." }
+    ]
+  }
+]

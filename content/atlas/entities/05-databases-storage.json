@@ -1,0 +1,397 @@
+[
+  {
+    "id": "sql-vs-nosql",
+    "title": "SQL vs NoSQL",
+    "type": "comparison",
+    "layer": "databases",
+    "subcategory": "nosql",
+    "description": "Evaluating relational databases against document, key-value and wide-column stores for a specific workload.",
+    "question": "Which database should I choose: relational or NoSQL?",
+    "tags": ["sql", "nosql", "relational", "document", "key-value", "database selection"],
+    "aliases": ["which database should I choose", "NoSQL vs SQL", "document vs relational"],
+    "problems": ["which database should I choose", "should I use SQL or NoSQL", "my database is becoming a bottleneck"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Relational databases store data in tables with schemas, joins and ACID transactions. NoSQL is a broad family: document stores (MongoDB), key-value and wide-column stores (DynamoDB, Cassandra), each optimized for particular access patterns and horizontal scale.",
+      "context": "The useful question is not SQL or NoSQL in general, but which data model and consistency guarantees fit your queries. Relational databases are flexible for unknown future queries. NoSQL databases are fast and scalable for access patterns you design up front.",
+      "assumptions": ["You can describe your main read and write access patterns.", "You know which operations need multi-record transactions."],
+      "whenToUse": ["Relational: evolving queries, joins, multi-entity transactions, reporting, strong constraints.", "Key-value/wide-column: very high scale with known access patterns, predictable single-digit-millisecond lookups.", "Document: self-contained aggregates read and written together, flexible schemas."],
+      "whenNotToUse": ["NoSQL when you need ad-hoc queries and joins across entities.", "Relational when write volume or data size exceeds what one primary (plus replicas) can handle and the data shards poorly."],
+      "alternatives": ["Distributed SQL (CockroachDB, Spanner, YugabyteDB) for SQL semantics at horizontal scale.", "Relational plus cache or search index for specific hot paths."],
+      "operations": "Managed offerings dominate both camps. Relational operations focus on vacuum/indexing, replicas and failover. NoSQL operations focus on partition key design, hot partitions and capacity modes.",
+      "summary": "Default to a relational database unless you have a known access pattern at a scale or latency that relational systems cannot meet, or your data is naturally document-shaped."
+    },
+    "tradeoffs": {
+      "options": ["Relational (SQL)", "Key-value / wide-column", "Document"],
+      "rows": [
+        { "dimension": "Performance", "values": ["Excellent with good indexes", "Predictable low-latency lookups by key", "Fast reads of whole aggregates"] },
+        { "dimension": "Scalability", "values": ["Vertical plus read replicas; sharding is hard", "Horizontal by design", "Horizontal with sharding"] },
+        { "dimension": "Reliability", "values": ["Mature failover tooling", "Built-in multi-node replication", "Replica sets"] },
+        { "dimension": "Complexity", "values": ["Schema migrations", "Access patterns must be designed up front", "Schema discipline is on you"] },
+        { "dimension": "Developer Experience", "values": ["SQL is widely known; ad-hoc queries", "Single-table design is unfamiliar", "Natural for JSON-shaped data"] },
+        { "dimension": "Flexibility", "values": ["New queries are easy", "New access patterns may need new indexes or tables", "Moderate"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Relational (SQL)", "chooseWhen": ["Most business applications", "Unknown future queries", "Multi-entity transactions"] },
+      { "option": "Key-value / wide-column", "chooseWhen": ["Massive scale with known keys", "Strict latency SLOs"] },
+      { "option": "Document", "chooseWhen": ["Self-contained aggregates", "Rapidly evolving document shapes"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "postgresql", "note": "A leading relational option." },
+      { "type": "evaluates", "target": "dynamodb", "note": "A leading managed key-value option." },
+      { "type": "precedes", "target": "postgresql-vs-mysql", "note": "If relational, which engine." },
+      { "type": "related-to", "target": "sharding", "note": "How each family scales writes." }
+    ]
+  },
+  {
+    "id": "postgresql-vs-mysql",
+    "title": "PostgreSQL vs MySQL",
+    "type": "comparison",
+    "layer": "databases",
+    "subcategory": "relational",
+    "description": "Comparing the two most widely used open-source relational databases for specific workloads.",
+    "question": "Should we use PostgreSQL or MySQL?",
+    "tags": ["postgresql", "mysql", "relational", "database", "rds", "aurora"],
+    "aliases": ["postgres vs mysql"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Both are mature, well-supported relational databases available as managed services on every major cloud. PostgreSQL emphasizes standards compliance, extensibility and rich data types. MySQL (InnoDB) emphasizes simplicity, read performance and a long history of large-scale web use.",
+      "whenToUse": ["PostgreSQL: complex queries, JSONB, geospatial (PostGIS), extensions, strict SQL behaviour.", "MySQL: simple high-volume OLTP, existing MySQL expertise, ecosystems built around it (e.g. Vitess for sharding)."],
+      "whenNotToUse": ["Neither is wrong for typical web applications; team experience usually matters more than feature differences."],
+      "operations": "PostgreSQL requires attention to vacuum and connection management (connection poolers are common). MySQL replication and its sharding ecosystem are very mature.",
+      "summary": "Pick the one your team operates well. Prefer PostgreSQL for feature-rich data needs, MySQL where its scaling ecosystem or existing expertise matters."
+    },
+    "tradeoffs": {
+      "options": ["PostgreSQL", "MySQL"],
+      "rows": [
+        { "dimension": "Performance", "values": ["Strong on complex queries", "Strong on simple, read-heavy OLTP"] },
+        { "dimension": "Operations", "values": ["Vacuum, connection pooling", "Mature replication tooling"] },
+        { "dimension": "Developer Experience", "values": ["Rich types and extensions", "Simple and familiar"] },
+        { "dimension": "Scalability", "values": ["Replicas; sharding via extensions", "Replicas; Vitess for sharding"] }
+      ]
+    },
+    "guidance": [
+      { "option": "PostgreSQL", "chooseWhen": ["Complex data types or queries", "Extensions like PostGIS"] },
+      { "option": "MySQL", "chooseWhen": ["Existing expertise", "Planned use of Vitess-style sharding"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "postgresql", "note": "One side of the comparison." },
+      { "type": "evaluates", "target": "mysql", "note": "The other side." }
+    ]
+  },
+  {
+    "id": "single-primary-vs-multi-primary",
+    "title": "Single Primary vs Multi Primary",
+    "type": "decision",
+    "layer": "databases",
+    "subcategory": "relational",
+    "secondaryLayers": ["reliability"],
+    "description": "Whether all writes go through one primary node or several nodes accept writes concurrently.",
+    "question": "Do we need writes accepted in more than one place?",
+    "tags": ["replication", "multi-primary", "multi-master", "failover", "conflict resolution", "write scaling"],
+    "aliases": ["multi-master replication", "single leader vs multi leader"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "In single-primary replication, one node accepts writes and replicates them to followers. In multi-primary replication, several nodes accept writes and must resolve conflicting updates.",
+      "context": "Multi-primary is usually motivated by multi-region write latency or availability. It brings conflict resolution, which is a hard application-level problem.",
+      "whenToUse": ["Single primary: nearly all applications, including most multi-region read setups.", "Multi primary: writes must succeed in several regions with low latency, and the data model tolerates conflict resolution (or a distributed SQL database handles consensus)."],
+      "whenNotToUse": ["Multi primary for data with invariants that must hold globally (balances, unique reservations) unless you use a consensus-based database."],
+      "alternatives": ["Single primary with fast automated failover.", "Distributed SQL with consensus-based writes.", "Partition data by region so each region has its own primary."],
+      "failureModes": ["Silent data loss from last-write-wins conflict resolution.", "Split-brain during failover in single-primary setups without fencing.", "Failover promoting a lagging replica and discarding writes."],
+      "summary": "Stay single-primary and invest in failover until write latency across regions is a proven business problem."
+    },
+    "tradeoffs": {
+      "options": ["Single primary", "Multi primary"],
+      "rows": [
+        { "dimension": "Reliability", "values": ["Primary is a failover point", "No single write node; conflicts instead"] },
+        { "dimension": "Performance", "values": ["Remote writes travel to the primary", "Local writes in each region"] },
+        { "dimension": "Complexity", "values": ["Well understood", "Conflict resolution and testing"] },
+        { "dimension": "Operations", "values": ["Failover drills", "Conflict monitoring, topology management"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Single primary", "chooseWhen": ["Most workloads", "Strong invariants"] },
+      { "option": "Multi primary", "chooseWhen": ["Proven need for local writes in many regions", "Conflict-tolerant data"] }
+    ],
+    "relations": [
+      { "type": "introduces-risk", "target": "single-point-of-failure", "note": "Without automated failover, the primary is a single point of failure." },
+      { "type": "related-to", "target": "github-monolith-evolution", "note": "GitHub's 2018 incident involved cross-site MySQL failover." },
+      { "type": "related-to", "target": "active-active-vs-active-passive", "note": "Database topology constrains multi-region strategy." },
+      { "type": "related-to", "target": "read-replicas", "note": "Single-primary systems scale reads with replicas." }
+    ]
+  },
+  {
+    "id": "postgresql",
+    "title": "PostgreSQL",
+    "type": "technology",
+    "layer": "databases",
+    "subcategory": "relational",
+    "description": "An extensible open-source relational database with strong SQL compliance and rich data types.",
+    "tags": ["postgresql", "postgres", "sql", "relational", "rds", "aurora"],
+    "aliases": ["postgres", "pg"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "PostgreSQL documentation", "url": "https://www.postgresql.org/docs/", "publisher": "PostgreSQL Global Development Group" }],
+    "sections": {
+      "overview": "PostgreSQL provides ACID transactions with MVCC, rich types (JSONB, arrays, ranges), extensions (PostGIS, pgvector) and streaming replication.",
+      "context": "The default system of record for many applications. Managed offerings include Amazon RDS and Aurora, Google Cloud SQL and AlloyDB, and Azure Database for PostgreSQL.",
+      "whenToUse": ["General-purpose OLTP.", "Mixed relational and JSON data.", "Geospatial and vector search via extensions."],
+      "whenNotToUse": ["Process-per-connection model needs a pooler at high connection counts.", "Write scaling beyond one primary requires sharding."],
+      "summary": "A strong default system of record."
+    },
+    "relations": [
+      { "type": "competes-with", "target": "mysql", "note": "The other main open-source relational database." },
+      { "type": "integrates-with", "target": "read-replicas", "note": "Streaming replication feeds read replicas." },
+      { "type": "related-to", "target": "vector-databases", "note": "pgvector adds vector search." }
+    ]
+  },
+  {
+    "id": "mysql",
+    "title": "MySQL",
+    "type": "technology",
+    "layer": "databases",
+    "subcategory": "relational",
+    "description": "A widely deployed open-source relational database known for simple, high-volume OLTP.",
+    "tags": ["mysql", "innodb", "sql", "relational", "vitess"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "MySQL documentation", "url": "https://dev.mysql.com/doc/", "publisher": "Oracle" }],
+    "sections": {
+      "overview": "MySQL with the InnoDB engine provides ACID transactions, mature replication and broad tooling. Large web companies have run it at very high scale, often with sharding layers such as Vitess.",
+      "whenToUse": ["High-volume web OLTP.", "Teams with MySQL expertise."],
+      "whenNotToUse": ["Fewer advanced data types and extensions than PostgreSQL."],
+      "summary": "A proven choice for web-scale OLTP."
+    },
+    "relations": [
+      { "type": "integrates-with", "target": "sharding", "note": "Vitess and similar layers shard MySQL." },
+      { "type": "related-to", "target": "github-monolith-evolution", "note": "GitHub runs MySQL at large scale." }
+    ]
+  },
+  {
+    "id": "dynamodb",
+    "title": "Amazon DynamoDB",
+    "type": "technology",
+    "layer": "databases",
+    "subcategory": "nosql",
+    "description": "AWS's fully managed key-value and document database with predictable latency at any scale.",
+    "tags": ["dynamodb", "nosql", "key-value", "aws", "serverless database"],
+    "aliases": ["DynamoDB"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Amazon DynamoDB?", "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html", "publisher": "AWS" }],
+    "sections": {
+      "overview": "DynamoDB stores items by partition key (and optional sort key), scales horizontally, and offers on-demand or provisioned capacity with no servers to manage.",
+      "whenToUse": ["Known access patterns at large scale.", "Serverless architectures with Lambda."],
+      "whenNotToUse": ["Ad-hoc queries and joins.", "Poor partition key choice creates hot partitions."],
+      "summary": "Excellent when you design access patterns first."
+    },
+    "relations": [
+      { "type": "alternative-to", "target": "postgresql", "note": "Trades query flexibility for managed horizontal scale." },
+      { "type": "integrates-with", "target": "aws-lambda", "note": "A common serverless pairing." }
+    ]
+  },
+  {
+    "id": "read-replicas",
+    "title": "Read Replicas",
+    "type": "pattern",
+    "layer": "databases",
+    "subcategory": "database-patterns",
+    "secondaryLayers": ["performance"],
+    "description": "Copies of a primary database that serve read traffic, trading freshness for read capacity.",
+    "tags": ["read replicas", "replication", "replication lag", "database scaling"],
+    "aliases": ["replication", "replicas"],
+    "problems": ["how do I reduce database load", "my database is becoming a bottleneck"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Replicas receive changes from the primary asynchronously (usually) and serve read queries. They scale reads and can be promoted during failover.",
+      "whenToUse": ["Read-heavy workloads.", "Reporting queries that should not load the primary."],
+      "whenNotToUse": ["Write-bound workloads.", "Reads that must see the latest write, unless routed to the primary."],
+      "failureModes": ["Replication lag causing users to not see their own writes.", "Replica overload when the primary fails over and capacity shrinks."],
+      "implementation": ["Route read-your-writes paths to the primary.", "Monitor lag and remove lagging replicas from rotation."],
+      "summary": "The standard first step for read scaling in relational databases."
+    },
+    "relations": [
+      { "type": "precedes", "target": "sharding", "note": "When writes, not reads, are the bottleneck." },
+      { "type": "related-to", "target": "consistency-models", "note": "Replicas are eventually consistent." }
+    ]
+  },
+  {
+    "id": "sharding",
+    "title": "Sharding",
+    "type": "pattern",
+    "layer": "databases",
+    "subcategory": "database-patterns",
+    "secondaryLayers": ["performance"],
+    "description": "Partitioning data across multiple databases by a shard key to scale writes and storage.",
+    "tags": ["sharding", "partitioning", "shard key", "horizontal scaling", "vitess"],
+    "aliases": ["partitioning", "horizontal partitioning"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Sharding splits a dataset into shards, each on its own database, according to a shard key (tenant, user, region, hash). Each shard handles a fraction of writes and storage.",
+      "whenToUse": ["Write throughput or data size beyond one primary.", "Natural partition keys such as tenant ID."],
+      "whenNotToUse": ["Before exhausting vertical scaling, query optimization, caching and replicas.", "Workloads dominated by cross-entity queries."],
+      "failureModes": ["Over-sharding.", "Hot shards from skewed keys.", "Cross-shard transactions and queries becoming expensive.", "Resharding operations that are risky and slow."],
+      "summary": "Powerful and hard to undo; choose the shard key carefully and late."
+    },
+    "relations": [
+      { "type": "can-cause", "target": "over-sharding", "note": "Sharding too early or too finely." },
+      { "type": "alternative-to", "target": "sql-vs-nosql", "note": "Moving to a horizontally scalable database is the alternative to sharding a relational one." }
+    ]
+  },
+  {
+    "id": "database-per-service",
+    "title": "Database per Service",
+    "type": "pattern",
+    "layer": "databases",
+    "subcategory": "database-patterns",
+    "secondaryLayers": ["architecture-decisions"],
+    "description": "Each service owns its data store; others access the data only through the service's API or events.",
+    "tags": ["database per service", "microservices", "data ownership", "shared database"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Each microservice has a private database. No other service reads its tables directly. This keeps services independently deployable.",
+      "whenToUse": ["Microservices that must evolve schemas independently."],
+      "whenNotToUse": ["Modular monoliths can use one database with schema-per-module instead."],
+      "failureModes": ["Distributed transactions and inconsistency across services.", "Reporting that needs data from many services."],
+      "implementation": ["Use events or an outbox to share changes.", "Use sagas for multi-service workflows.", "Build a separate analytics store for cross-service reporting."],
+      "summary": "Essential for real microservice independence; brings data consistency work."
+    },
+    "relations": [
+      { "type": "requires", "target": "event-driven-architecture", "note": "Services share state changes through events." },
+      { "type": "related-to", "target": "consistency-models", "note": "Cross-service data is eventually consistent." }
+    ]
+  },
+  {
+    "id": "event-sourcing",
+    "title": "Event Sourcing",
+    "type": "pattern",
+    "layer": "databases",
+    "subcategory": "database-patterns",
+    "secondaryLayers": ["messaging"],
+    "description": "Storing state as an append-only sequence of events and deriving current state by replaying them.",
+    "tags": ["event sourcing", "cqrs", "audit log", "events"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Instead of updating rows, the system records every change as an event. Current state is a projection built from the event log. Often combined with CQRS (separate read models).",
+      "whenToUse": ["Domains where history and auditability are core (ledgers, compliance).", "When many read models must be derived from the same changes."],
+      "whenNotToUse": ["Typical CRUD applications.", "Teams new to eventual consistency."],
+      "failureModes": ["Event schema evolution becoming painful.", "Slow rebuilds of projections.", "Accidental complexity in simple domains."],
+      "summary": "Valuable in history-centric domains; costly elsewhere."
+    },
+    "relations": [
+      { "type": "depends-on", "target": "event-driven-architecture", "note": "Events are the primary data structure." },
+      { "type": "related-to", "target": "kafka", "note": "Sometimes used as the event log transport." },
+      { "type": "can-cause", "target": "over-abstraction", "note": "Applied to simple domains, it adds machinery with little benefit." }
+    ]
+  },
+  {
+    "id": "s3-vs-r2",
+    "title": "Amazon S3 vs Cloudflare R2",
+    "type": "comparison",
+    "layer": "storage",
+    "subcategory": "object-storage",
+    "secondaryLayers": ["cost"],
+    "description": "Comparing AWS's object storage with Cloudflare's S3-compatible storage that does not charge egress fees.",
+    "question": "Should we store objects in S3 or R2?",
+    "tags": ["s3", "r2", "object storage", "egress", "cloudflare", "aws"],
+    "aliases": ["S3 vs R2"],
+    "problems": ["our egress bill is high", "storage cost reduction"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "Amazon S3 pricing", "url": "https://aws.amazon.com/s3/pricing/", "publisher": "AWS" },
+      { "title": "Cloudflare R2 pricing", "url": "https://developers.cloudflare.com/r2/pricing/", "publisher": "Cloudflare" }
+    ],
+    "sections": {
+      "overview": "S3 is the reference object store with many storage classes, lifecycle policies and deep AWS integration. R2 offers an S3-compatible API with no egress charges, positioned for content served to the internet.",
+      "whenToUse": ["S3: data processed inside AWS, need for storage classes and archival tiers, event integrations.", "R2: egress-heavy public content, multi-cloud access, Cloudflare Workers integration."],
+      "whenNotToUse": ["S3 for egress-heavy public delivery without a CDN.", "R2 when workloads depend on S3-specific features or AWS-native integrations."],
+      "cost": "Pricing changes; check current pages. The structural difference is egress: S3 charges for data transfer out to the internet, R2 does not.",
+      "summary": "Keep data near the compute that processes it. Use R2 or a CDN when internet egress dominates cost."
+    },
+    "tradeoffs": {
+      "options": ["Amazon S3", "Cloudflare R2"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Storage classes; egress fees", "No egress fees; fewer tiers"] },
+        { "dimension": "Flexibility", "values": ["Richest feature set and integrations", "S3-compatible API subset"] },
+        { "dimension": "Operations", "values": ["Lifecycle and replication tooling", "Simpler feature set"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Amazon S3", "chooseWhen": ["Compute in AWS", "Archival tiers", "Event-driven integrations"] },
+      { "option": "Cloudflare R2", "chooseWhen": ["Heavy internet egress", "Multi-cloud consumers"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "amazon-s3", "note": "One option." },
+      { "type": "evaluates", "target": "cloudflare-r2", "note": "The other option." },
+      { "type": "related-to", "target": "unit-economics", "note": "Egress cost per user is a unit economics question." }
+    ]
+  },
+  {
+    "id": "amazon-s3",
+    "title": "Amazon S3",
+    "type": "technology",
+    "layer": "storage",
+    "subcategory": "object-storage",
+    "description": "AWS's highly durable object storage service with multiple storage classes and lifecycle management.",
+    "tags": ["s3", "object storage", "aws", "buckets"],
+    "aliases": ["S3"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Amazon S3?", "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html", "publisher": "AWS" }],
+    "sections": {
+      "overview": "S3 stores objects in buckets, designed for very high durability, with storage classes from frequent access to deep archive and lifecycle rules to move data between them.",
+      "whenToUse": ["Backups, data lakes, media, static assets, logs."],
+      "whenNotToUse": ["Low-latency random block access (use block storage).", "POSIX file semantics (use file storage)."],
+      "failureModes": ["Publicly exposed buckets.", "Unbounded growth without lifecycle policies."],
+      "summary": "The default object store on AWS."
+    },
+    "relations": [
+      { "type": "competes-with", "target": "cloudflare-r2", "note": "S3-compatible alternative without egress fees." },
+      { "type": "introduces-risk", "target": "exposed-buckets", "note": "Misconfigured access policies expose data publicly." }
+    ]
+  },
+  {
+    "id": "cloudflare-r2",
+    "title": "Cloudflare R2",
+    "type": "technology",
+    "layer": "storage",
+    "subcategory": "object-storage",
+    "description": "S3-compatible object storage from Cloudflare with no egress fees.",
+    "tags": ["r2", "cloudflare", "object storage", "egress"],
+    "aliases": ["R2"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Cloudflare R2 documentation", "url": "https://developers.cloudflare.com/r2/", "publisher": "Cloudflare" }],
+    "sections": {
+      "overview": "R2 exposes an S3-compatible API, integrates with Cloudflare Workers, and does not bill for egress.",
+      "whenToUse": ["Public assets and downloads with high egress."],
+      "whenNotToUse": ["Workloads requiring S3-only features or tight AWS integration."],
+      "summary": "A cost lever for egress-heavy storage."
+    },
+    "relations": [
+      { "type": "related-to", "target": "cloudflare-edge-platform", "note": "Part of Cloudflare's developer platform." }
+    ]
+  }
+]

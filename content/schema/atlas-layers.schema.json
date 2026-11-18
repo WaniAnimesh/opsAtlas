@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "atlas-layers.schema.json",
+  "title": "Decision Atlas taxonomy layers",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "number", "title", "purpose", "whyItMatters", "subcategories"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      "number": { "type": "integer", "minimum": 1 },
+      "title": { "type": "string" },
+      "purpose": { "type": "string" },
+      "whyItMatters": { "type": "string" },
+      "priority": { "type": "string" },
+      "subcategories": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "topics"],
+          "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "topics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["title"],
+                "properties": { "title": { "type": "string" }, "entity": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,471 @@
+[
+  {
+    "id": "reliability-engineering",
+    "title": "Reliability Engineering",
+    "type": "concept",
+    "layer": "reliability",
+    "subcategory": "availability",
+    "secondaryLayers": ["observability"],
+    "description": "The principles and practices for running systems that meet explicit reliability targets at an acceptable cost.",
+    "tags": ["reliability", "sre", "availability", "resilience", "incident management"],
+    "aliases": ["SRE", "site reliability engineering", "resilience engineering"],
+    "problems": ["my system has reliability issues", "we keep having outages"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Site Reliability Engineering (Google)", "url": "https://sre.google/sre-book/table-of-contents/", "publisher": "Google" }],
+    "sections": {
+      "overview": "Reliability engineering treats availability, latency and correctness as measurable product properties. It sets targets (SLOs), designs systems to meet them, measures them continuously, and learns from incidents.",
+      "context": "As systems become distributed, failures become partial and constant. Reliability engineering provides the tools to manage that: timeouts and retries with backoff, circuit breakers, redundancy, load shedding, graceful degradation, disaster recovery and blameless postmortems.",
+      "application": ["Define SLOs for user-facing journeys and use error budgets to balance features and stability.", "Design for failure: every remote call has a timeout and a failure behaviour.", "Practise recovery with game days and chaos experiments.", "Write postmortems that lead to systemic fixes."],
+      "examples": ["The OpsAtlas incident library documents real outages where these practices would have changed the outcome."],
+      "summary": "Reliability is a target you choose, pay for, and verify, not a property you hope for."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "does-your-business-need-five-nines", "note": "Targets come before architecture." },
+      { "type": "prerequisite-for", "target": "slos-and-error-budgets", "note": "SLOs are the measurement core of reliability engineering." },
+      { "type": "related-to", "target": "circuit-breaker", "note": "A core resilience pattern." },
+      { "type": "related-to", "target": "retries-with-backoff", "note": "A core resilience pattern." },
+      { "type": "related-to", "target": "chaos-engineering", "note": "Verifies resilience in practice." },
+      { "type": "related-to", "target": "cascade-failures", "note": "The failure mode most reliability patterns target." }
+    ]
+  },
+  {
+    "id": "does-your-business-need-five-nines",
+    "title": "Does Your Business Need Five Nines?",
+    "type": "decision",
+    "layer": "reliability",
+    "subcategory": "availability",
+    "secondaryLayers": ["foundations", "cost"],
+    "description": "Choosing an availability target from business impact, and understanding what each extra nine costs.",
+    "question": "What availability target do we actually need?",
+    "tags": ["availability", "five nines", "four nines", "three nines", "slo", "sla", "high availability"],
+    "aliases": ["99.999%", "how should I design for high availability", "cost vs reliability"],
+    "problems": ["how should I design for high availability", "how much reliability engineering do we need"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Availability targets translate into allowed downtime: 99.9% allows about 8.8 hours per year, 99.99% about 53 minutes, and 99.999% about 5.3 minutes. Each extra nine typically requires a different architecture and operating model.",
+      "context": "Your system's availability is bounded by its dependencies. A service depending on five components at 99.95% each cannot honestly promise 99.99% without redundancy.",
+      "assumptions": ["You can estimate revenue or trust lost per hour of downtime.", "Targets apply to user journeys, not individual servers."],
+      "whenToUse": ["Three nines: most internal tools and early products; single region, multi-zone.", "Four nines: core revenue paths of established products; automated failover, careful change management, strong observability.", "Five nines: payments, telecom, safety-critical systems; multi-region active-active, cell-based design, dedicated reliability teams."],
+      "whenNotToUse": ["Do not set five nines because it sounds right; with only about 5 minutes per year, any human-in-the-loop recovery already breaks it.", "Do not promise an SLA stricter than your dependencies' SLAs allow."],
+      "cost": "Cost rises steeply per nine: redundant capacity, multi-region data replication, more rigorous release processes, and on-call staffing.",
+      "organization": "Higher targets require mature incident response, change management and on-call. Organizational capability is often the limiting factor.",
+      "failureModes": ["Single points of failure hidden in shared dependencies (DNS, identity, config).", "Over-investment: complex multi-region systems that fail in new ways more often than the simple design did."],
+      "summary": "Set the target from business impact. Most products need three to four nines on critical journeys and less elsewhere."
+    },
+    "tradeoffs": {
+      "options": ["99.9%", "99.99%", "99.999%"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Baseline", "Several times baseline", "Very high"] },
+        { "dimension": "Reliability", "values": ["~8.8 h/year downtime", "~53 min/year", "~5.3 min/year"] },
+        { "dimension": "Complexity", "values": ["Multi-zone, manual recovery acceptable", "Automated failover, staged rollouts", "Multi-region active-active, cells"] },
+        { "dimension": "Operations", "values": ["Business-hours response may be fine", "24/7 on-call", "Dedicated reliability teams"] },
+        { "dimension": "Organizational Fit", "values": ["Startups", "Growth and established products", "Critical infrastructure"] }
+      ]
+    },
+    "guidance": [
+      { "option": "99.9%", "chooseWhen": ["Early products", "Internal tools"] },
+      { "option": "99.99%", "chooseWhen": ["Revenue-critical journeys of established products"] },
+      { "option": "99.999%", "chooseWhen": ["Downtime causes severe financial, legal or safety harm"], "avoidWhen": ["Human-driven recovery is part of the plan"] }
+    ],
+    "relations": [
+      { "type": "precedes", "target": "active-active-vs-active-passive", "note": "Higher targets need multi-site strategies." },
+      { "type": "precedes", "target": "rto-and-rpo", "note": "Availability targets go together with recovery objectives." },
+      { "type": "related-to", "target": "slos-and-error-budgets", "note": "SLOs express the chosen target." },
+      { "type": "related-to", "target": "single-point-of-failure", "note": "Each nine requires removing another class of single points of failure." },
+      { "type": "related-to", "target": "cost-benefit-analysis", "note": "The target should come from cost of downtime versus cost of prevention." }
+    ]
+  },
+  {
+    "id": "active-active-vs-active-passive",
+    "title": "Active-Active vs Active-Passive",
+    "type": "decision",
+    "layer": "reliability",
+    "subcategory": "disaster-recovery",
+    "description": "Multi-site strategies: serve from all sites at once, or keep standby sites (warm standby, pilot light) ready to take over.",
+    "question": "Should our second site serve traffic all the time, or stand by for failover?",
+    "tags": ["active active", "active passive", "multi-region", "disaster recovery", "failover", "warm standby", "pilot light"],
+    "aliases": ["multi-region strategy", "pilot light", "warm standby"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Disaster recovery options in the cloud (AWS Well-Architected)", "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html", "publisher": "AWS" }],
+    "sections": {
+      "overview": "Active-active runs production in multiple sites simultaneously, each serving traffic. Active-passive keeps a secondary site that takes over on failure, ranging from pilot light (minimal core running) to warm standby (scaled-down full stack).",
+      "context": "The deciding factors are RTO, RPO, data replication model and cost. Active-active demands that data be writable or partitioned across sites; active-passive demands reliable, rehearsed failover.",
+      "whenToUse": ["Active-active: near-zero RTO, global latency needs, and data that can be partitioned or replicated with acceptable consistency.", "Active-passive: RTO of minutes to hours is acceptable; simpler data model with a single write primary."],
+      "whenNotToUse": ["Active-active with a single-primary database (writes still have one home).", "Active-passive with failover that has never been tested."],
+      "cost": "Active-active pays for full capacity in all sites. Pilot light pays for data replication and minimal infrastructure; warm standby sits between.",
+      "failureModes": ["Failover never rehearsed and failing when needed.", "Thundering herd on the surviving site when traffic shifts.", "Split-brain writes during network partitions.", "Cross-region dependencies that fail with the primary region."],
+      "summary": "Choose from RTO/RPO and data model. Rehearse failover regardless of the strategy."
+    },
+    "tradeoffs": {
+      "options": ["Active-active", "Warm standby", "Pilot light"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Highest", "Medium", "Low"] },
+        { "dimension": "Reliability", "values": ["RTO near zero", "RTO minutes", "RTO tens of minutes to hours"] },
+        { "dimension": "Complexity", "values": ["Multi-site data consistency", "Failover automation", "Provisioning on failover"] },
+        { "dimension": "Operations", "values": ["Continuous multi-site operations", "Regular failover drills", "Regular rebuild drills"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Active-active", "chooseWhen": ["Five-nines targets", "Partitionable data"] },
+      { "option": "Warm standby", "chooseWhen": ["Four-nines targets", "Single write primary"] },
+      { "option": "Pilot light", "chooseWhen": ["Cost-sensitive DR", "RTO of hours acceptable"] }
+    ],
+    "relations": [
+      { "type": "depends-on", "target": "rto-and-rpo", "note": "Recovery objectives choose the strategy." },
+      { "type": "mitigates", "target": "single-point-of-failure", "note": "Removes the region as a single point of failure." },
+      { "type": "introduces-risk", "target": "thundering-herd", "note": "Shifting all traffic to one site at once." },
+      { "type": "related-to", "target": "chaos-engineering", "note": "Failover must be exercised to be trusted." }
+    ]
+  },
+  {
+    "id": "rto-and-rpo",
+    "title": "RTO and RPO",
+    "type": "concept",
+    "layer": "reliability",
+    "subcategory": "disaster-recovery",
+    "description": "Recovery Time Objective (how long you can be down) and Recovery Point Objective (how much data you can lose).",
+    "tags": ["rto", "rpo", "disaster recovery", "backups", "recovery objectives"],
+    "aliases": ["RTO vs RPO", "recovery time objective", "recovery point objective"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "RTO is the maximum acceptable time to restore service after a disruption. RPO is the maximum acceptable data loss, measured in time since the last recoverable state.",
+      "application": ["RPO drives backup frequency and replication mode (asynchronous replication means RPO > 0).", "RTO drives standby strategy and automation.", "Set both per system, based on business impact."],
+      "examples": ["Nightly backups give an RPO up to 24 hours.", "Synchronous replication can approach RPO zero at a latency cost."],
+      "limitations": "Objectives are meaningless without restore tests. An untested backup has unknown RTO and RPO.",
+      "summary": "Agree RTO and RPO with the business, then design and test recovery to meet them."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "active-active-vs-active-passive", "note": "Objectives select the DR strategy." }
+    ]
+  },
+  {
+    "id": "circuit-breaker",
+    "title": "Circuit Breaker",
+    "type": "pattern",
+    "layer": "reliability",
+    "subcategory": "availability",
+    "description": "Stops calling a failing dependency for a while so callers fail fast and the dependency can recover.",
+    "tags": ["circuit breaker", "resilience", "fail fast", "fallback", "hystrix", "resilience4j"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "CircuitBreaker", "url": "https://martinfowler.com/bliki/CircuitBreaker.html", "publisher": "martinfowler.com" }],
+    "sections": {
+      "overview": "A circuit breaker tracks failures of calls to a dependency. After a threshold it opens and rejects calls immediately; after a cool-down it lets trial calls through (half-open) and closes again on success.",
+      "whenToUse": ["Every synchronous call to a dependency that can fail or slow down."],
+      "whenNotToUse": ["As a replacement for timeouts; breakers need timeouts to detect slowness."],
+      "implementation": ["Combine with timeouts, bulkheads and fallbacks.", "Expose breaker state in metrics."],
+      "summary": "Fail fast to protect both caller and dependency."
+    },
+    "relations": [
+      { "type": "prevents", "target": "cascade-failures", "note": "Stops a failing dependency from exhausting callers." },
+      { "type": "mitigates", "target": "retry-storms", "note": "Stops retries against a dependency known to be failing." }
+    ]
+  },
+  {
+    "id": "retries-with-backoff",
+    "title": "Retries with Exponential Backoff and Jitter",
+    "type": "pattern",
+    "layer": "reliability",
+    "subcategory": "availability",
+    "description": "Retrying transient failures with increasing, randomized delays and a cap on attempts.",
+    "tags": ["retries", "backoff", "jitter", "timeouts", "resilience"],
+    "aliases": ["retries", "exponential backoff"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Timeouts, retries, and backoff with jitter", "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/", "publisher": "AWS Builders' Library" }],
+    "sections": {
+      "overview": "Retries hide transient failures. Exponential backoff spaces attempts further apart; jitter randomizes them so clients do not retry in sync.",
+      "whenToUse": ["Idempotent operations with transient failures."],
+      "whenNotToUse": ["Non-idempotent operations without idempotency keys.", "At every layer of a deep call chain (retries multiply)."],
+      "implementation": ["Retry at one layer only.", "Use retry budgets or token buckets.", "Respect server-provided Retry-After."],
+      "summary": "Retry rarely, with backoff and jitter, at a single layer."
+    },
+    "relations": [
+      { "type": "prevents", "target": "retry-storms", "note": "Backoff, jitter and budgets keep retries from multiplying load." },
+      { "type": "related-to", "target": "circuit-breaker", "note": "Usually deployed together." }
+    ]
+  },
+  {
+    "id": "chaos-engineering",
+    "title": "Chaos Engineering",
+    "type": "concept",
+    "layer": "reliability",
+    "subcategory": "chaos-engineering",
+    "description": "Running controlled experiments that inject failures to verify a system behaves as expected under stress.",
+    "tags": ["chaos engineering", "fault injection", "game days", "resilience testing", "chaos monkey"],
+    "aliases": ["fault injection", "game days"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Principles of Chaos Engineering", "url": "https://principlesofchaos.org/", "publisher": "principlesofchaos.org" }],
+    "sections": {
+      "overview": "Chaos engineering forms a hypothesis about steady-state behaviour, injects a realistic fault (instance loss, latency, dependency failure), and checks whether the hypothesis holds, with a controlled blast radius.",
+      "whenToUse": ["After basic observability and resilience patterns are in place.", "Before relying on failover in production."],
+      "whenNotToUse": ["Without monitoring that can detect impact, or without a way to stop the experiment."],
+      "summary": "Find weaknesses deliberately before they find you."
+    },
+    "relations": [
+      { "type": "requires", "target": "observability", "note": "Experiments are useless if you cannot see their effect." },
+      { "type": "related-to", "target": "netflix-chaos-engineering", "note": "The best-known public example." },
+      { "type": "prevents", "target": "single-point-of-failure", "note": "Experiments reveal hidden single points of failure." }
+    ]
+  },
+  {
+    "id": "observability",
+    "title": "Observability",
+    "type": "concept",
+    "layer": "observability",
+    "subcategory": "monitoring",
+    "description": "The ability to understand a system's internal state from its outputs: metrics, logs and traces.",
+    "tags": ["observability", "monitoring", "metrics", "logs", "traces", "telemetry", "alerting"],
+    "aliases": ["monitoring", "telemetry", "o11y"],
+    "problems": ["I can't tell why requests are slow", "debugging production is hard"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Monitoring tells you whether known things are wrong. Observability lets you ask new questions about behaviour you did not predict. It is built from correlated telemetry: metrics for trends, logs for events, traces for request paths.",
+      "context": "In distributed systems a single request touches many processes. Without correlated telemetry, debugging becomes guesswork. Observability is a prerequisite for microservices, Kubernetes and chaos engineering.",
+      "whenToUse": ["Any production system; the depth scales with system complexity."],
+      "whenNotToUse": ["Avoid collecting everything at full fidelity; observability cost can rival compute cost."],
+      "cost": "Ingest and retention pricing grow with traffic and cardinality. Sampling, aggregation and retention tiers keep cost in check.",
+      "implementation": ["Instrument with a vendor-neutral standard (OpenTelemetry).", "Propagate trace context across every hop.", "Alert on SLO burn rates rather than raw resource thresholds."],
+      "summary": "Invest in correlated telemetry before distributing the system."
+    },
+    "relations": [
+      { "type": "precedes", "target": "opentelemetry", "note": "OpenTelemetry is the standard way to produce the telemetry observability depends on." },
+      { "type": "related-to", "target": "metrics-vs-logs-vs-traces", "note": "The three signal types compared." },
+      { "type": "related-to", "target": "slos-and-error-budgets", "note": "SLOs turn telemetry into decisions." },
+      { "type": "prerequisite-for", "target": "reliability-engineering", "note": "You cannot manage reliability you cannot measure." }
+    ]
+  },
+  {
+    "id": "distributed-tracing",
+    "title": "Distributed Tracing",
+    "type": "concept",
+    "layer": "observability",
+    "subcategory": "tracing",
+    "description": "Following a single request across services as a tree of timed spans.",
+    "tags": ["distributed tracing", "tracing", "spans", "trace context", "opentelemetry", "jaeger"],
+    "aliases": ["tracing"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "W3C Trace Context", "url": "https://www.w3.org/TR/trace-context/", "publisher": "W3C" }],
+    "sections": {
+      "overview": "Each service records spans (named, timed operations) tagged with a shared trace ID passed along in request headers. A tracing backend assembles spans into a trace showing where time went and where errors occurred.",
+      "context": "Tracing helps engineers understand request flows across services and is the main tool for latency debugging in microservices.",
+      "whenToUse": ["Any system with more than a couple of services on a request path.", "Asynchronous flows, by propagating context through messages."],
+      "whenNotToUse": ["Tracing every request at full fidelity at high volume; use sampling."],
+      "failureModes": ["Broken context propagation leaving gaps.", "Sampling that drops exactly the slow or failed requests (consider tail-based sampling)."],
+      "summary": "The microscope for distributed request paths."
+    },
+    "relations": [
+      { "type": "precedes", "target": "reliability-engineering", "note": "With requests visible end to end, reliability engineering gives the practices to manage the system you can now see." },
+      { "type": "related-to", "target": "jaeger", "note": "An open-source tracing backend." },
+      { "type": "mitigates", "target": "cascade-failures", "note": "Shows which dependency is slowing everything down." }
+    ]
+  },
+  {
+    "id": "metrics-vs-logs-vs-traces",
+    "title": "Metrics vs Logs vs Traces",
+    "type": "comparison",
+    "layer": "observability",
+    "subcategory": "logging",
+    "description": "What each telemetry signal is good for, what it costs, and how to use them together.",
+    "question": "Which telemetry signals should we invest in first?",
+    "tags": ["metrics", "logs", "traces", "telemetry", "observability cost"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Metrics are numeric time series, cheap to store and ideal for alerting and trends. Logs are discrete event records, rich but expensive at volume. Traces are request-scoped trees of spans that explain latency and dependencies.",
+      "whenToUse": ["Metrics for SLOs, dashboards and alerts.", "Logs for detailed context and audit.", "Traces for cross-service latency and error attribution."],
+      "whenNotToUse": ["High-cardinality labels on metrics.", "Logging every request body at volume.", "Unsampled traces at very high throughput."],
+      "summary": "Alert on metrics, investigate with traces, confirm with logs, and link them with shared IDs."
+    },
+    "tradeoffs": {
+      "options": ["Metrics", "Logs", "Traces"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Low per signal; cardinality drives cost", "High at volume", "Medium with sampling"] },
+        { "dimension": "Performance", "values": ["Fast queries over time", "Slow full-text at scale", "Fast per trace"] },
+        { "dimension": "Operations", "values": ["Label hygiene", "Retention and parsing", "Context propagation"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Metrics", "chooseWhen": ["Alerting", "SLOs"] },
+      { "option": "Logs", "chooseWhen": ["Debug context", "Audit"] },
+      { "option": "Traces", "chooseWhen": ["Microservices latency", "Dependency analysis"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "distributed-tracing", "note": "Traces as one of the three signals." },
+      { "type": "evaluates", "target": "prometheus", "note": "A metrics system." }
+    ]
+  },
+  {
+    "id": "prometheus-vs-datadog",
+    "title": "Prometheus vs Datadog",
+    "type": "comparison",
+    "layer": "observability",
+    "subcategory": "monitoring",
+    "secondaryLayers": ["cost"],
+    "description": "Self-hosted open-source monitoring compared with an integrated commercial observability platform.",
+    "question": "Should we run Prometheus ourselves or pay for Datadog?",
+    "tags": ["prometheus", "datadog", "monitoring", "observability", "grafana", "build vs buy"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Prometheus is an open-source metrics system with a pull model and PromQL, usually paired with Grafana and long-term storage. Datadog is a SaaS platform covering metrics, logs, traces, APM and more.",
+      "whenToUse": ["Prometheus: Kubernetes-centric stacks, cost sensitivity at scale, teams able to run it.", "Datadog: small teams wanting breadth quickly, mixed environments, little appetite for running monitoring."],
+      "whenNotToUse": ["Prometheus alone for logs and traces.", "Datadog without cost governance; custom metrics and log volume can grow bills quickly."],
+      "cost": "Prometheus costs staff time and storage. Datadog costs scale with hosts, custom metrics and ingest. Compare at your projected volume.",
+      "summary": "Buy for breadth and speed; build on open source when scale makes the bill or lock-in unacceptable."
+    },
+    "tradeoffs": {
+      "options": ["Prometheus (+ Grafana)", "Datadog"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Infra and staff time", "Usage-based subscription"] },
+        { "dimension": "Operations", "values": ["Run storage, HA and upgrades", "Agent rollout only"] },
+        { "dimension": "Developer Experience", "values": ["PromQL; assemble the stack", "Integrated UI across signals"] },
+        { "dimension": "Flexibility", "values": ["Open standards; no lock-in", "Proprietary platform"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Prometheus (+ Grafana)", "chooseWhen": ["Kubernetes", "Large metric volume", "Platform team"] },
+      { "option": "Datadog", "chooseWhen": ["Small team", "Need logs+traces+metrics fast"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "prometheus", "note": "Open-source option." },
+      { "type": "evaluates", "target": "datadog", "note": "Commercial option." },
+      { "type": "related-to", "target": "build-vs-buy", "note": "An observability build vs buy decision." }
+    ]
+  },
+  {
+    "id": "opentelemetry",
+    "title": "OpenTelemetry",
+    "type": "technology",
+    "layer": "observability",
+    "subcategory": "tracing",
+    "description": "A vendor-neutral standard and toolkit for generating and exporting traces, metrics and logs.",
+    "tags": ["opentelemetry", "otel", "instrumentation", "tracing", "metrics", "cncf"],
+    "aliases": ["OTel"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "OpenTelemetry documentation", "url": "https://opentelemetry.io/docs/", "publisher": "opentelemetry.io" }],
+    "sections": {
+      "overview": "OpenTelemetry provides APIs, SDKs, auto-instrumentation and the Collector for producing telemetry and sending it to any compatible backend.",
+      "context": "It decouples instrumentation from vendors: instrument once, then route to Jaeger, Prometheus, Datadog or others through the Collector.",
+      "whenToUse": ["New instrumentation in any language.", "Avoiding lock-in to an observability vendor."],
+      "whenNotToUse": ["Maturity varies by language and signal; check status for your stack."],
+      "summary": "The default way to instrument services today."
+    },
+    "relations": [
+      { "type": "implements", "target": "distributed-tracing", "note": "OpenTelemetry generates the spans and propagates the context that distributed tracing needs." },
+      { "type": "integrates-with", "target": "jaeger", "note": "Exports traces to Jaeger." },
+      { "type": "integrates-with", "target": "prometheus", "note": "Exports metrics to Prometheus." },
+      { "type": "integrates-with", "target": "datadog", "note": "Datadog accepts OTLP data." }
+    ]
+  },
+  {
+    "id": "prometheus",
+    "title": "Prometheus",
+    "type": "technology",
+    "layer": "observability",
+    "subcategory": "monitoring",
+    "description": "An open-source metrics monitoring and alerting system with a pull model and the PromQL query language.",
+    "tags": ["prometheus", "metrics", "promql", "alertmanager", "cncf"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Prometheus overview", "url": "https://prometheus.io/docs/introduction/overview/", "publisher": "prometheus.io" }],
+    "sections": {
+      "overview": "Prometheus scrapes metrics endpoints, stores time series locally, evaluates alert rules and sends alerts through Alertmanager.",
+      "whenToUse": ["Kubernetes and cloud-native metrics."],
+      "whenNotToUse": ["Long-term, global storage needs add-ons (Thanos, Mimir, Cortex).", "High-cardinality labels degrade performance."],
+      "summary": "The standard for cloud-native metrics."
+    },
+    "relations": [
+      { "type": "competes-with", "target": "datadog", "note": "Overlap in metrics and alerting." }
+    ]
+  },
+  {
+    "id": "datadog",
+    "title": "Datadog",
+    "type": "technology",
+    "layer": "observability",
+    "subcategory": "monitoring",
+    "description": "A SaaS observability platform for infrastructure metrics, APM, logs, traces and security.",
+    "tags": ["datadog", "apm", "observability", "saas", "monitoring"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Datadog documentation", "url": "https://docs.datadoghq.com/", "publisher": "Datadog" }],
+    "sections": {
+      "overview": "Datadog collects telemetry through agents and integrations and provides unified dashboards, alerting and APM.",
+      "whenToUse": ["Fast, broad observability without running backends."],
+      "whenNotToUse": ["Unmanaged usage leads to large bills; set budgets and tag ownership."],
+      "summary": "Breadth and speed at a usage-based price."
+    },
+    "relations": [
+      { "type": "provides", "target": "distributed-tracing", "note": "Includes an APM and tracing backend." }
+    ]
+  },
+  {
+    "id": "jaeger",
+    "title": "Jaeger",
+    "type": "technology",
+    "layer": "observability",
+    "subcategory": "tracing",
+    "description": "An open-source distributed tracing backend originally built at Uber.",
+    "tags": ["jaeger", "tracing", "cncf", "open source"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Jaeger documentation", "url": "https://www.jaegertracing.io/docs/", "publisher": "jaegertracing.io" }],
+    "sections": {
+      "overview": "Jaeger stores and visualizes traces, supports OpenTelemetry ingestion, and offers dependency graphs and trace comparison.",
+      "whenToUse": ["Self-hosted tracing."],
+      "whenNotToUse": ["Requires a storage backend sized for trace volume."],
+      "summary": "A common open-source tracing backend."
+    },
+    "relations": [
+      { "type": "implements", "target": "distributed-tracing", "note": "Stores and displays traces." }
+    ]
+  },
+  {
+    "id": "slos-and-error-budgets",
+    "title": "SLIs, SLOs and Error Budgets",
+    "type": "concept",
+    "layer": "observability",
+    "subcategory": "sre",
+    "secondaryLayers": ["reliability"],
+    "description": "Measuring reliability from the user's perspective and using the allowed unreliability to make release decisions.",
+    "tags": ["sli", "slo", "sla", "error budget", "sre", "burn rate"],
+    "aliases": ["SLO", "SLI", "SLA", "error budget"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Service Level Objectives (SRE book)", "url": "https://sre.google/sre-book/service-level-objectives/", "publisher": "Google" }],
+    "sections": {
+      "overview": "An SLI is a measured indicator (e.g. fraction of requests under 300 ms). An SLO is a target for it (99.9% over 28 days). The error budget is the allowed shortfall (0.1%). An SLA is a contractual promise, usually looser than the SLO.",
+      "application": ["When the budget is healthy, ship faster; when it is burning, prioritize reliability work.", "Alert on burn rate instead of raw thresholds."],
+      "limitations": "SLOs measured at the wrong place (server instead of user experience) give false confidence.",
+      "summary": "Make reliability a number that drives decisions."
+    },
+    "relations": [
+      { "type": "prevents", "target": "cascade-failures", "note": "Burn-rate alerts surface degradations before they cascade." }
+    ]
+  }
+]

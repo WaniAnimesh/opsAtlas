@@ -1325,3 +1325,54 @@ These are flagged for decision rather than changed silently.
 8. **Session id entropy today.** Session ids currently come from `crypto.randomUUID()` (122 random bits), below Requirement 18.2's 128 bits. The separate `sessionKeyGenerator` fixes this.
 9. **`/api/v1/incidents` on the Worker.** The static site never calls it. Keeping it means bundling incidents into the Worker (larger script; the free plan caps compressed Worker size at 3 MB). Removing it is simpler but drops a public read API. This design keeps it behind the bundle and marks it optional.
 10. **Additions beyond the binding list.** This design adds error code 409 `SESSION_CONFLICT`, `DebriefResult.endedAt`, the `{id}@{version}.json` file naming, the `session_events` no-update trigger, the 200-entry Local_Progress cap, and the rule that `timed_out` sessions count as completed for learning. Each is small and reversible; confirm or reject during review.
+
+---
+
+## Cloud Architecture Decision Atlas (Extension)
+
+OpsAtlas now also hosts the **Cloud Architecture Decision Atlas**: a decision-centric knowledge platform whose content is organized around engineering decisions and connected by a typed knowledge graph. The Incident Atlas (`/atlas/`) and the Simulator stay as the hands-on part of the product and are linked from case studies and the home page. Everything below is static: no API, no runtime AI, no new backend.
+
+### Content model (`content/atlas/`)
+
+| File | Contents | Schema |
+|---|---|---|
+| `layers.json` | The 19 taxonomy layers, each with subcategories and topics. A topic links to an entity id or is shown as "planned". | `content/schema/atlas-layers.schema.json` |
+| `entities/*.json` | Arrays of entities, grouped by domain for editing. | `content/schema/atlas-entity.schema.json` |
+| `journeys.json` | Problem-oriented journeys: ordered entity steps, each with a `why` explaining the transition. | `content/schema/atlas-journeys.schema.json` |
+
+Entity types: `concept`, `decision`, `comparison`, `technology`, `pattern`, `failure-pattern`, `framework`, `case-study`, `review`. Every entity carries id (slug), title, type, primary layer, optional secondary layers, description, tags, aliases, problem phrasings, depth level (orientation / decision / operational), status, `lastReviewed`, sources, template sections, and outgoing `relations` (`{type, target, note}`). Decisions and comparisons also carry a `question`, a `tradeoffs` matrix over the ten standard dimensions, and per-option `guidance`. Reviews carry `criteria` (area, question, healthy signal, risk signal, entity links). Case studies carry `sources`, separate `facts` from `interpretation`, and may link OpsAtlas `incidents` by slug.
+
+Relationship types are the PRD 6.19.3 set in five families (decision, technology, operational, failure, learning), plus one addition: **`evaluates`** (decision family) links a decision or comparison to the options it weighs. Only outgoing edges are stored; incoming edges and inverse labels ("Can be caused by", "Required by") are derived, so navigation works in both directions without duplicated data.
+
+### Integrity rules (`src/frontend/lib/atlas/validate.ts`)
+
+The same pure validator runs in `npm run validate-content` (after AJV schema checks) and inside the build-time loader, which throws so `next build` fails. Rules: exactly 19 unique layers; unique slug ids; known layers, types, relation types, section keys and dimensions; every relation target exists, no self-links or duplicates; tradeoff rows match the option count; no published entity is orphaned; decisions and comparisons have a question, tradeoff matrix, when-to-use, when-not-to-use and guidance for at least two options; every decision links (in either direction) to at least one failure pattern; every failure pattern has causes, warning signs, prevention and recovery and links to a decision, pattern or technology; case studies have sources; reviews have criteria; layer topics, review criteria, journey steps and incident slugs all resolve.
+
+### Routes (static export)
+
+| Route | Purpose |
+|---|---|
+| `/` | Value proposition, four entry points, problem questions, featured "scale my system" journey, 19 layers, featured incidents. |
+| `/explore/` | Journeys, common questions, browse by type and by layer (FR-008). |
+| `/layers/`, `/layers/[layer]/` | Layer landing pages: why it matters, subcategories with planned topics, entities by type, linked failure patterns, journeys, related layers (FR-001, 9.4). |
+| `/[section]/`, `/[section]/[slug]/` | Type index and entity page. Sections: `decisions`, `comparisons`, `technologies`, `patterns`, `concepts`, `failure-patterns`, `frameworks`, `case-studies`, `reviews`. Static routes (`atlas`, `simulator`, `learning`, `explore`, `graph`, `search`, `layers`, `journeys`) take precedence over `[section]`. |
+| `/journeys/[slug]/` | Step-by-step decision journey with the reason for each transition (PRD 21). |
+| `/graph/?focus=<id>` | Client knowledge graph explorer. |
+| `/search/?q=` | Client search over a build-time document list. The header search form submits here with plain GET, so it works without JavaScript reaching the page. |
+| `/sitemap.xml` | Stable URLs for all entities, layers, journeys and incidents. |
+
+Entity pages render the universal template in a fixed section order, then the tradeoff table, option guidance and review criteria, then related decisions / technologies / patterns / failure patterns / concepts / frameworks / case studies / reviews (grouped from both edge directions, with the edge note as the explanation), the journeys passing through the page with the next step, "What to explore next" (outgoing `precedes`, `requires`, `enables`, `depends-on`, `requires-capability`, `prerequisite-for`, `deepens`), and sources. Each page sets title, description, canonical URL and keywords; `metadataBase` comes from `NEXT_PUBLIC_SITE_URL`.
+
+### Graph explorer
+
+The graph view never shows the whole graph. It shows the focus node, its direct neighbours on one ring and, optionally, second-degree neighbours on an outer ring, capped at 40 or 60 nodes with a "showing the closest N" notice. Users can filter by relationship family, pick a focus from a grouped select, click or press Enter on a node to re-center, and go back along a trail. Node colour encodes type; edge colour encodes family; arrows show direction. A table below the SVG lists every connection of the focus with its label and note as the accessible alternative (PRD 14.3).
+
+### Search
+
+`lib/atlas/search.ts` scores documents with field weights (title 10, alias 8, problem phrasings 7, tags 6, decision question 5, description 3, body 1), light suffix stemming, prefix matching and stopword removal. Exact title or alias matches get +100, so direct searches ("Kafka", "k8s") rank the entity first. Problem-shaped queries ("how do I…", "should…", "?") boost decisions, comparisons and journeys. Results show their content type and can be filtered by type.
+
+### Atlas design concerns
+
+11. **Search and graph pages render on the client.** Both read `useSearchParams` under `Suspense`, so the exported HTML for `/search/` and `/graph/` contains a loading fallback, and the graph's text alternative also needs JavaScript. All entity, layer and journey pages are fully static HTML, and every entity page lists its connections as text, so content stays reachable without JavaScript.
+12. **Taxonomy coverage is partial by design.** All 19 layers have landing pages and the PRD's MVP list of decisions, failure patterns and comparisons is covered (111 entities, 317 relations at time of writing). Topics without pages are listed as "planned" instead of linking to empty pages (PRD Risk 1).
+13. **`evaluates` is an addition** to the PRD relationship vocabulary. It could be expressed as `related-to`, but the explicit type lets the UI tell options apart from merely related topics.

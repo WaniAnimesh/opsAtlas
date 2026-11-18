@@ -1,0 +1,287 @@
+[
+  {
+    "id": "should-you-use-kafka",
+    "title": "Should You Use Kafka?",
+    "type": "decision",
+    "layer": "messaging",
+    "subcategory": "event-streaming",
+    "description": "When a durable, replayable event log justifies running Kafka, and when a queue or managed stream is the better tool.",
+    "question": "Do we need Kafka, or would a queue or managed stream do?",
+    "tags": ["kafka", "event streaming", "message broker", "queue", "event log"],
+    "aliases": ["do I need kafka", "kafka decision"],
+    "problems": ["should I use kafka", "when should I introduce a message broker", "how do I handle asynchronous communication"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Apache Kafka documentation", "url": "https://kafka.apache.org/documentation/", "publisher": "Apache Software Foundation" }],
+    "sections": {
+      "overview": "Kafka is a distributed, partitioned, replicated commit log. Producers append events to topics; consumers read at their own pace and can replay history. It is built for high-throughput streams with many independent consumers.",
+      "context": "Kafka's distinctive features are retention and replay, per-partition ordering, and consumer groups that scale horizontally. If you need none of these, a queue is usually simpler.",
+      "assumptions": ["You have already chosen asynchronous communication for these flows."],
+      "whenToUse": ["Many consumers need the same stream independently.", "Replay is required (rebuilding projections, reprocessing after bugs).", "Sustained high throughput.", "Event streaming is becoming a shared backbone across teams, with someone to own it."],
+      "whenNotToUse": ["Task queues where each message is processed once and deleted.", "Low volume where a managed queue costs less and needs no operations.", "No owner for partitions, retention, schemas and upgrades."],
+      "alternatives": ["Amazon SQS or RabbitMQ for work queues.", "Managed streams (Kinesis, Confluent Cloud, MSK, Redpanda Cloud).", "Database outbox with polling for low volume."],
+      "operations": ["Partition count and key design determine ordering and parallelism.", "Consumer lag monitoring.", "Schema management and compatibility rules.", "Broker upgrades and rebalancing if self-hosted."],
+      "organization": "Kafka works best as a platform with an owning team. Shared topics without owners lead to schema drift and orphaned consumers.",
+      "failureModes": ["Too few partitions limiting consumer parallelism; too many increasing overhead.", "Poison messages blocking a partition.", "Unowned topics and schemas.", "Single Kafka expert as a knowledge silo."],
+      "summary": "Use Kafka when replay, fan-out and throughput are real requirements; prefer a managed offering; otherwise use a queue."
+    },
+    "tradeoffs": {
+      "options": ["Kafka (self-hosted or managed)", "Managed queue (SQS, RabbitMQ service)"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Cluster baseline cost; efficient at volume", "Pay per use; cheap at low volume"] },
+        { "dimension": "Performance", "values": ["Very high throughput", "Adequate for most task workloads"] },
+        { "dimension": "Scalability", "values": ["Scales by partitions", "Scales transparently (managed)"] },
+        { "dimension": "Complexity", "values": ["Partitions, offsets, schemas", "Simple send/receive/delete"] },
+        { "dimension": "Operations", "values": ["Significant if self-hosted", "Minimal"] },
+        { "dimension": "Flexibility", "values": ["Replay and many consumers", "Messages consumed once"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Kafka (self-hosted or managed)", "chooseWhen": ["Replay", "Many independent consumers", "High throughput"], "avoidWhen": ["No owner"] },
+      { "option": "Managed queue (SQS, RabbitMQ service)", "chooseWhen": ["Work queues", "Low volume", "Small team"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "kafka", "note": "The technology in question." },
+      { "type": "alternative-to", "target": "when-kafka-is-overkill", "note": "The other side of this decision, for small teams." },
+      { "type": "precedes", "target": "rabbitmq-vs-kafka", "note": "Compare against a traditional broker." },
+      { "type": "introduces-risk", "target": "knowledge-silos", "note": "Kafka expertise often concentrates in one person." },
+      { "type": "introduces-risk", "target": "ownership-confusion", "note": "Shared topics without owners." }
+    ]
+  },
+  {
+    "id": "when-kafka-is-overkill",
+    "title": "When Kafka Is Overkill",
+    "type": "decision",
+    "layer": "messaging",
+    "subcategory": "event-streaming",
+    "description": "Signals that Kafka is more than a team needs, and simpler options that cover the same requirements. Includes guidance for small teams.",
+    "question": "Is Kafka too much for our team and workload?",
+    "tags": ["kafka", "small teams", "queue", "simplicity", "overengineering"],
+    "aliases": ["kafka for small teams"],
+    "problems": ["are we overengineering", "kafka is hard to operate"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Kafka is often adopted as a default 'event bus' before there are requirements only Kafka meets. For many teams a managed queue, a database outbox, or a managed stream gives the same outcome with far less operational load.",
+      "context": "Small teams pay Kafka's fixed costs (cluster, partitions, schemas, consumer group tuning) without benefiting from its scale.",
+      "whenToUse": ["Treat Kafka as overkill when messages are processed once by one consumer type.", "When volume is low (thousands of messages per second or fewer) and replay is not required.", "When the team has no capacity to own a streaming platform."],
+      "whenNotToUse": ["Do not avoid Kafka when replay and multi-consumer fan-out are central to the design."],
+      "alternatives": ["SQS (with SNS for fan-out).", "RabbitMQ (managed).", "PostgreSQL-based queues or outbox tables for low volume.", "Managed Kafka if you need the API but not the operations."],
+      "summary": "If you cannot name the Kafka feature you need (replay, ordered partitions, high fan-out, very high throughput), start with a queue."
+    },
+    "tradeoffs": {
+      "options": ["Kafka", "Simpler alternative (queue, outbox)"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Fixed cluster and staff cost", "Low"] },
+        { "dimension": "Complexity", "values": ["High", "Low"] },
+        { "dimension": "Operations", "values": ["Partitions, schemas, lag", "Queue depth and dead letters"] },
+        { "dimension": "Flexibility", "values": ["Replay and fan-out", "Migrate later if requirements appear"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Kafka", "chooseWhen": ["Named requirement only Kafka meets"] },
+      { "option": "Simpler alternative (queue, outbox)", "chooseWhen": ["Small team", "Low volume", "Single consumer per message"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "amazon-sqs", "note": "A common simpler alternative." },
+      { "type": "prevents", "target": "knowledge-silos", "note": "Fewer specialist systems means less concentrated expertise." },
+      { "type": "related-to", "target": "startup-architecture-review", "note": "Startups usually do not need Kafka." },
+      { "type": "related-to", "target": "first-principles-thinking", "note": "Start from the requirement, not the tool." }
+    ]
+  },
+  {
+    "id": "rabbitmq-vs-kafka",
+    "title": "RabbitMQ vs Kafka",
+    "type": "comparison",
+    "layer": "messaging",
+    "subcategory": "message-brokers",
+    "description": "Comparing a smart-broker message queue with a distributed event log.",
+    "question": "Should we use RabbitMQ or Kafka for messaging?",
+    "tags": ["rabbitmq", "kafka", "message broker", "event streaming", "amqp"],
+    "aliases": ["kafka vs rabbitmq"],
+    "difficulty": "decision",
+    "status": "published",
+    "sections": {
+      "overview": "RabbitMQ routes messages through exchanges to queues and deletes them once acknowledged. Kafka appends events to partitioned logs that consumers read by offset and can replay.",
+      "whenToUse": ["RabbitMQ: task distribution, complex routing, per-message acknowledgement and priorities.", "Kafka: event streams, replay, many consumer groups, very high throughput."],
+      "whenNotToUse": ["RabbitMQ: long retention and replay.", "Kafka: per-message routing logic and priority queues."],
+      "summary": "RabbitMQ for work queues and routing; Kafka for durable event streams."
+    },
+    "lastReviewed": "2026-11-17",
+    "tradeoffs": {
+      "options": ["RabbitMQ", "Kafka"],
+      "rows": [
+        { "dimension": "Performance", "values": ["High for task queues", "Very high sequential throughput"] },
+        { "dimension": "Flexibility", "values": ["Rich routing", "Replay and retention"] },
+        { "dimension": "Operations", "values": ["Queue depth, memory alarms", "Partitions, offsets, rebalancing"] },
+        { "dimension": "Complexity", "values": ["Exchanges and bindings", "Partitions and consumer groups"] }
+      ]
+    },
+    "guidance": [
+      { "option": "RabbitMQ", "chooseWhen": ["Work queues", "Routing rules", "Priorities"] },
+      { "option": "Kafka", "chooseWhen": ["Event log", "Replay", "Many consumers"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "rabbitmq", "note": "One side." },
+      { "type": "evaluates", "target": "kafka", "note": "The other side." }
+    ]
+  },
+  {
+    "id": "kafka",
+    "title": "Apache Kafka",
+    "type": "technology",
+    "layer": "messaging",
+    "subcategory": "event-streaming",
+    "description": "A distributed, partitioned, replicated log for event streaming.",
+    "tags": ["kafka", "event streaming", "log", "topics", "partitions", "msk", "confluent"],
+    "aliases": ["Kafka", "MSK", "Confluent"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Apache Kafka documentation", "url": "https://kafka.apache.org/documentation/", "publisher": "Apache Software Foundation" }],
+    "sections": {
+      "overview": "Kafka stores events in topics split into partitions, replicated across brokers. Consumers in a group share partitions and track offsets.",
+      "context": "In an architecture Kafka acts as a streaming backbone between producers and many consumers, a buffer for bursts, and sometimes an event store.",
+      "whenToUse": ["Event streaming and change-data-capture pipelines.", "Fan-out to many consumers with replay."],
+      "whenNotToUse": ["Ordering only within a partition.", "Operational expertise required when self-hosted."],
+      "failureModes": ["Consumer lag growing unnoticed.", "Rebalance storms.", "Partition hot spots from skewed keys."],
+      "summary": "A powerful event backbone that needs an owner."
+    },
+    "relations": [
+      { "type": "implements", "target": "event-driven-architecture", "note": "A common event transport." },
+      { "type": "competes-with", "target": "rabbitmq", "note": "Overlapping messaging use cases." },
+      { "type": "requires-capability", "target": "observability", "note": "Lag and broker health monitoring are mandatory." }
+    ]
+  },
+  {
+    "id": "rabbitmq",
+    "title": "RabbitMQ",
+    "type": "technology",
+    "layer": "messaging",
+    "subcategory": "message-brokers",
+    "description": "An open-source message broker supporting AMQP with flexible routing and acknowledgements.",
+    "tags": ["rabbitmq", "amqp", "message broker", "queue"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "RabbitMQ documentation", "url": "https://www.rabbitmq.com/docs", "publisher": "RabbitMQ" }],
+    "sections": {
+      "overview": "RabbitMQ accepts messages on exchanges, routes them to queues by bindings, and delivers them to consumers with acknowledgements, retries and dead-lettering.",
+      "whenToUse": ["Background jobs and task distribution.", "Routing by topic or header."],
+      "whenNotToUse": ["Long-term retention and replay."],
+      "summary": "A versatile broker for work queues."
+    },
+    "relations": [
+      { "type": "implements", "target": "queue-buffering", "note": "Queues absorb bursts of work." },
+      { "type": "provides", "target": "dead-letter-queues", "note": "Built-in dead-letter exchanges." }
+    ]
+  },
+  {
+    "id": "amazon-sqs",
+    "title": "Amazon SQS",
+    "type": "technology",
+    "layer": "messaging",
+    "subcategory": "message-brokers",
+    "description": "AWS's fully managed message queue with standard and FIFO queue types.",
+    "tags": ["sqs", "queue", "aws", "managed queue"],
+    "aliases": ["SQS"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Amazon SQS?", "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html", "publisher": "AWS" }],
+    "sections": {
+      "overview": "SQS offers standard queues (at-least-once, best-effort ordering) and FIFO queues (ordered, exactly-once processing within limits), with visibility timeouts and dead-letter queues.",
+      "whenToUse": ["Decoupling and buffering on AWS with no operations."],
+      "whenNotToUse": ["Replay of past messages; multiple independent consumers of the same message without SNS."],
+      "summary": "The simplest durable queue on AWS."
+    },
+    "relations": [
+      { "type": "implements", "target": "queue-buffering", "note": "Managed buffering between producers and consumers." },
+      { "type": "provides", "target": "dead-letter-queues", "note": "Redrive policies move failed messages aside." },
+      { "type": "alternative-to", "target": "kafka", "note": "For work queues without replay." }
+    ]
+  },
+  {
+    "id": "event-driven-architecture",
+    "title": "Event-Driven Architecture",
+    "type": "pattern",
+    "layer": "messaging",
+    "subcategory": "eda",
+    "secondaryLayers": ["architecture-decisions"],
+    "description": "Components communicate by publishing and reacting to events instead of calling each other directly.",
+    "tags": ["event driven", "eda", "events", "pub sub", "choreography", "orchestration", "polling"],
+    "aliases": ["EDA", "polling vs event driven", "pub/sub"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "In EDA, producers emit events describing facts ('OrderPlaced'). Consumers subscribe and react. Producers do not know who consumes their events.",
+      "context": "EDA decouples teams and availability, and replaces polling with push. It moves complexity to delivery semantics, ordering, idempotency and eventual consistency.",
+      "whenToUse": ["Several independent reactions to the same business event.", "Integration between team-owned services.", "Replacing polling loops."],
+      "whenNotToUse": ["Flows that need an immediate, consistent answer.", "Small systems where direct calls are clear and sufficient."],
+      "alternatives": ["Choreography (services react to each other's events) vs orchestration (a workflow engine directs steps).", "Synchronous calls for queries."],
+      "operations": ["Delivery is usually at-least-once: consumers must be idempotent.", "Monitor lag and dead letters.", "Version event schemas."],
+      "failureModes": ["Lost events when DB writes and publishes are not atomic (use an outbox).", "Event chains nobody can trace end to end.", "Ownership confusion over shared event schemas."],
+      "summary": "Use events for facts others react to; keep queries synchronous."
+    },
+    "relations": [
+      { "type": "requires", "target": "dead-letter-queues", "note": "Failed messages need a place to go." },
+      { "type": "requires", "target": "distributed-tracing", "note": "Tracing across async hops is the only way to follow flows." },
+      { "type": "precedes", "target": "should-you-use-kafka", "note": "Event-driven designs raise the event transport question." },
+      { "type": "mitigates", "target": "cascade-failures", "note": "Consumers can be down without failing producers." },
+      { "type": "introduces-risk", "target": "ownership-confusion", "note": "Shared event schemas need owners." }
+    ]
+  },
+  {
+    "id": "dead-letter-queues",
+    "title": "Dead-Letter Queues",
+    "type": "pattern",
+    "layer": "messaging",
+    "subcategory": "message-brokers",
+    "secondaryLayers": ["reliability"],
+    "description": "A holding queue for messages that repeatedly fail processing, so they do not block or loop forever.",
+    "tags": ["dead letter queue", "dlq", "poison message", "retries"],
+    "aliases": ["DLQ"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "After a configured number of failed attempts, a message moves to a dead-letter queue for inspection and later redrive.",
+      "whenToUse": ["Every production queue and async consumer."],
+      "whenNotToUse": ["Not a substitute for alerting; an unmonitored DLQ is silent data loss."],
+      "implementation": ["Alert on DLQ depth.", "Keep enough context to diagnose.", "Provide a tested redrive procedure."],
+      "summary": "Mandatory for async systems; monitor it."
+    },
+    "relations": [
+      { "type": "prevents", "target": "retry-storms", "note": "Caps retries for poison messages." }
+    ]
+  },
+  {
+    "id": "queue-buffering",
+    "title": "Queue Buffering",
+    "type": "pattern",
+    "layer": "performance",
+    "subcategory": "scaling-patterns",
+    "secondaryLayers": ["messaging", "reliability"],
+    "description": "Putting a queue between producers and consumers to absorb bursts and protect downstream capacity.",
+    "tags": ["queue", "buffering", "load leveling", "backpressure"],
+    "aliases": ["queue-based load leveling", "backpressure"],
+    "problems": ["traffic spikes overload my backend"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Producers enqueue work; consumers process at a sustainable rate. Peaks become queue depth instead of overload.",
+      "whenToUse": ["Bursty producers and limited consumer capacity.", "Work that can be processed later."],
+      "whenNotToUse": ["When users need the result synchronously."],
+      "failureModes": ["Unbounded queue growth hiding a capacity problem.", "Latency SLOs violated by long queues."],
+      "summary": "Turns overload into delay; set limits and alert on depth."
+    },
+    "relations": [
+      { "type": "mitigates", "target": "thundering-herd", "note": "Smooths sudden bursts." },
+      { "type": "mitigates", "target": "cascade-failures", "note": "Decouples producer availability from consumer health." }
+    ]
+  }
+]

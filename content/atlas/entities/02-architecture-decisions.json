@@ -1,0 +1,505 @@
+[
+  {
+    "id": "monolith-vs-microservices",
+    "title": "Monolith vs Microservices",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "system-topology",
+    "description": "Whether to keep one deployable application or split the system into independently deployed services.",
+    "question": "Should we keep a monolith or move to microservices?",
+    "tags": ["monolith", "microservices", "system topology", "service boundaries", "architecture"],
+    "aliases": ["microservices vs monolith", "should I use microservices"],
+    "problems": ["should I use microservices", "I need to scale my system", "should I split a service", "our deploys are blocking each other"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "Microservices (Lewis and Fowler)", "url": "https://martinfowler.com/articles/microservices.html", "publisher": "martinfowler.com" },
+      { "title": "MonolithFirst", "url": "https://martinfowler.com/bliki/MonolithFirst.html", "publisher": "martinfowler.com" }
+    ],
+    "sections": {
+      "overview": "A monolith is one deployable unit with one codebase and usually one database. Microservices split the system into services that are developed, deployed and scaled independently and communicate over the network.",
+      "context": "The decision is mostly about organizational scaling: how many teams can change the system at once without blocking each other. Microservices also allow different scaling profiles per component, but most workload scaling problems can be solved inside a monolith with horizontal scaling, caching and database work.",
+      "assumptions": ["The monolith is not already badly entangled; if it is, a modular monolith is often the intermediate step.", "You have, or will build, CI/CD, observability and on-call capacity for multiple services."],
+      "whenToUse": ["Several teams (typically more than 3–5) are blocked on shared deploys or a shared codebase.", "Components have very different scaling, availability or compliance needs.", "Domain boundaries are understood and stable.", "The organization can run distributed systems: automated deployment, tracing, service ownership."],
+      "whenNotToUse": ["Early-stage products whose domain boundaries are still changing.", "Small teams where every engineer touches every part of the system.", "When the real problem is a slow database or missing cache.", "When there is no automated deployment or distributed tracing."],
+      "alternatives": ["Modular monolith: enforce internal module boundaries, deploy as one unit.", "Extract only the one component with a genuinely different scaling or reliability profile.", "Scale the monolith horizontally behind a load balancer."],
+      "operations": ["Every service needs its own pipeline, monitoring, alerts, on-call owner and dependency upgrades.", "Debugging moves from stack traces to distributed traces.", "Network calls replace function calls, adding latency, partial failure and retries."],
+      "cost": "Infrastructure cost rises with per-service overhead (instances, load balancers, observability ingestion). The bigger cost is engineering time spent on platform, tooling and coordination.",
+      "organization": "Microservices work when service boundaries match team boundaries (Conway's Law). Without clear ownership they produce a distributed monolith: all the costs of distribution with none of the independence.",
+      "failureModes": ["Distributed monolith: services must deploy together.", "Chatty synchronous calls that create cascade failures.", "Shared database across services, which removes independence.", "Retry storms between services during partial outages."],
+      "implementation": ["Start by drawing domain boundaries in the monolith.", "Extract along seams with low coupling and a clear owner.", "Put tracing, service discovery and deployment automation in place before the second service."],
+      "summary": "Stay with a (modular) monolith until team coordination, not traffic, is the bottleneck, and until you can operate distributed systems. Then extract services along stable domain boundaries."
+    },
+    "tradeoffs": {
+      "options": ["Monolith", "Microservices"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Low infrastructure and tooling overhead", "Per-service overhead plus platform investment"] },
+        { "dimension": "Performance", "values": ["In-process calls; low latency", "Network hops add latency and serialization cost"] },
+        { "dimension": "Reliability", "values": ["One failure domain; a bad deploy affects everything", "Fault isolation possible, but partial failures and cascades appear"] },
+        { "dimension": "Scalability", "values": ["Scales horizontally as a whole", "Components scale independently"] },
+        { "dimension": "Complexity", "values": ["Complexity lives in the code", "Complexity moves to the network and operations"] },
+        { "dimension": "Operations", "values": ["One pipeline, one runtime to monitor", "Many pipelines, discovery, tracing, on-call per service"] },
+        { "dimension": "Developer Experience", "values": ["Simple local setup; contention as teams grow", "Team autonomy; harder local and end-to-end testing"] },
+        { "dimension": "Organizational Fit", "values": ["Small to mid-size teams", "Many teams with clear domain ownership"] },
+        { "dimension": "Flexibility", "values": ["Easy to refactor boundaries", "Boundaries are expensive to move once split"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Monolith", "chooseWhen": ["Fewer than ~3 teams", "Domain still evolving", "No platform or SRE capacity"], "avoidWhen": ["Teams routinely block each other on releases"] },
+      { "option": "Microservices", "chooseWhen": ["Many teams need independent release cadences", "Stable domain boundaries", "Mature CI/CD and observability"], "avoidWhen": ["Motivation is only 'scale' or fashion"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "microservices", "note": "The distributed option in this decision." },
+      { "type": "evaluates", "target": "modular-monolith", "note": "The intermediate option that keeps one deploy." },
+      { "type": "alternative-to", "target": "modular-monolith-vs-microservices", "note": "The follow-up question once a plain monolith is ruled out." },
+      { "type": "can-cause", "target": "premature-microservices", "note": "Choosing microservices before the organization needs them." },
+      { "type": "precedes", "target": "microservices", "note": "If you split, microservices introduce service-to-service communication concerns." },
+      { "type": "influences", "target": "sync-vs-async", "note": "Services must decide how they talk to each other." },
+      { "type": "influences", "target": "database-per-service", "note": "Splitting services raises the question of splitting data." },
+      { "type": "related-to", "target": "conways-law", "note": "System boundaries tend to mirror team communication boundaries." }
+    ]
+  },
+  {
+    "id": "modular-monolith-vs-microservices",
+    "title": "Modular Monolith vs Microservices",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "system-topology",
+    "description": "Whether enforced module boundaries inside one deployable are enough, or whether independent deployment is required.",
+    "question": "Do we need independent deployment, or are strong internal boundaries enough?",
+    "tags": ["modular monolith", "microservices", "modules", "boundaries", "domain driven design"],
+    "aliases": ["modulith"],
+    "problems": ["our monolith is a big ball of mud", "how do I prepare to split my monolith"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A modular monolith keeps one deployment but divides the code into modules with explicit interfaces and owned data. Microservices make those boundaries physical by deploying modules separately.",
+      "context": "Most benefits attributed to microservices (clear ownership, smaller cognitive load, enforced boundaries) come from modularity, not from network separation. Independent deployment and independent scaling are the benefits that only microservices provide.",
+      "whenToUse": ["Pick modular monolith when teams need ownership boundaries but can share a release train.", "Pick microservices when modules need separate release cadences, runtimes, scaling or failure isolation."],
+      "whenNotToUse": ["Modular monolith struggles when one module's resource profile (e.g. heavy batch work) degrades the rest.", "Microservices are a poor fit when module boundaries are still being discovered."],
+      "alternatives": ["Plain monolith with conventions only.", "Hybrid: modular monolith plus one or two extracted services for outlier workloads."],
+      "operations": "A modular monolith keeps one pipeline and one runtime. It needs build-time enforcement of boundaries (dependency rules, module-owned schemas) to avoid sliding back into a ball of mud.",
+      "organization": "Modules give teams ownership without forcing every team to run production infrastructure.",
+      "failureModes": ["Boundaries that exist only in folder names and are not enforced.", "Shared tables across modules, which make later extraction hard."],
+      "summary": "Modularize first. Extract a module into a service when you can name the specific benefit of independent deployment that it needs."
+    },
+    "tradeoffs": {
+      "options": ["Modular monolith", "Microservices"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Close to a monolith", "Per-service infrastructure and platform cost"] },
+        { "dimension": "Reliability", "values": ["Shared failure domain", "Isolated failure domains with network failure modes"] },
+        { "dimension": "Complexity", "values": ["Boundary enforcement in code", "Distributed systems complexity"] },
+        { "dimension": "Operations", "values": ["Single deploy and runtime", "Many deploys, discovery, tracing"] },
+        { "dimension": "Organizational Fit", "values": ["Teams share a release train", "Teams own release cadence end to end"] },
+        { "dimension": "Flexibility", "values": ["Modules can be extracted later", "Merging services back is rare and expensive"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Modular monolith", "chooseWhen": ["Need ownership boundaries", "Limited platform capacity", "Preparing for possible later extraction"] },
+      { "option": "Microservices", "chooseWhen": ["Independent release cadence is a hard requirement", "Module has distinct scaling or compliance needs"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "modular-monolith", "note": "The single-deploy option." },
+      { "type": "evaluates", "target": "microservices", "note": "The independent-deploy option." },
+      { "type": "can-cause", "target": "premature-microservices", "note": "Skipping modularization often leads to a distributed monolith." },
+      { "type": "related-to", "target": "conways-law", "note": "Module boundaries should follow team ownership." }
+    ]
+  },
+  {
+    "id": "microservices",
+    "title": "Microservices",
+    "type": "pattern",
+    "layer": "architecture-decisions",
+    "subcategory": "system-topology",
+    "description": "An architecture of small, independently deployable services, each owning its data and business capability.",
+    "tags": ["microservices", "services", "distributed systems", "service ownership"],
+    "aliases": ["microservice architecture"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "Microservices (Lewis and Fowler)", "url": "https://martinfowler.com/articles/microservices.html", "publisher": "martinfowler.com" }
+    ],
+    "sections": {
+      "overview": "Microservices structure an application as a set of services organized around business capabilities. Each service is deployed independently, owns its data, and is owned by one team.",
+      "context": "Once a system is split, every interaction crosses a network. That single fact drives the follow-on decisions: how services find each other, how they communicate, how failures are contained, and how requests are traced.",
+      "whenToUse": ["Multiple teams need independent delivery.", "Clear, stable business capability boundaries exist."],
+      "whenNotToUse": ["Small teams or early products.", "When independent deployment is not actually needed."],
+      "alternatives": ["Modular monolith.", "Service-oriented architecture with coarser services."],
+      "operations": ["Service discovery and load balancing.", "Distributed tracing and centralized logging.", "Service-to-service authentication.", "Per-service CI/CD and on-call ownership."],
+      "failureModes": ["Distributed monolith.", "Cascade failures through synchronous call chains.", "Data inconsistency across service-owned databases."],
+      "implementation": ["Define a contract (API or event schema) per service and version it.", "Set timeouts, retries with backoff and circuit breakers on every remote call.", "Invest in a paved deployment path before the service count grows."],
+      "summary": "Microservices trade code complexity for operational and network complexity. They pay off when they unlock team autonomy."
+    },
+    "relations": [
+      { "type": "requires", "target": "service-discovery", "note": "Services need a way to find healthy instances of each other as they scale and redeploy." },
+      { "type": "requires", "target": "observability", "note": "Requests now span many processes; you cannot debug them from one log file." },
+      { "type": "requires", "target": "distributed-tracing", "note": "Tracing shows where time goes in a request that crosses many services." },
+      { "type": "depends-on", "target": "api-gateway", "note": "External clients need one entry point instead of calling every service." },
+      { "type": "introduces-risk", "target": "cascade-failures", "note": "A slow dependency can exhaust callers' resources across the call graph." },
+      { "type": "introduces-risk", "target": "retry-storms", "note": "Retries at each hop multiply load during partial outages." },
+      { "type": "introduces-risk", "target": "ownership-confusion", "note": "Many services with unclear owners become orphaned." },
+      { "type": "related-to", "target": "database-per-service", "note": "Each service owning its data is a core microservices principle." },
+      { "type": "related-to", "target": "circuit-breaker", "note": "Contains failure between services." },
+      { "type": "precedes", "target": "kubernetes", "note": "Many service deployments raise the question of an orchestrator." }
+    ]
+  },
+  {
+    "id": "modular-monolith",
+    "title": "Modular Monolith",
+    "type": "pattern",
+    "layer": "architecture-decisions",
+    "subcategory": "system-topology",
+    "description": "One deployable application divided into modules with enforced boundaries and module-owned data.",
+    "tags": ["modular monolith", "modules", "monolith", "boundaries"],
+    "aliases": ["modulith"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A modular monolith is a single deployable whose code is split into modules. Modules talk only through defined interfaces and own their tables. It keeps deployment simple while giving teams clear ownership.",
+      "whenToUse": ["Most startups and many growth-stage companies.", "As a staging step before extracting services."],
+      "whenNotToUse": ["When a module has a resource profile that harms the rest and cannot be isolated in-process."],
+      "implementation": ["Enforce dependency rules at build time (architecture tests, package visibility).", "Give each module its own schema or table prefix and forbid cross-module joins.", "Communicate between modules through in-process interfaces or internal events."],
+      "failureModes": ["Boundary erosion when enforcement is missing.", "Shared tables that make extraction painful."],
+      "summary": "The default architecture until independent deployment becomes a real need."
+    },
+    "relations": [
+      { "type": "alternative-to", "target": "microservices", "note": "Delivers ownership boundaries without network separation." },
+      { "type": "prevents", "target": "premature-microservices", "note": "Gives teams boundaries without forcing distributed operations." },
+      { "type": "related-to", "target": "github-monolith-evolution", "note": "A public example of a large, long-lived monolith." }
+    ]
+  },
+  {
+    "id": "sync-vs-async",
+    "title": "Synchronous vs Asynchronous Communication",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "communication-patterns",
+    "secondaryLayers": ["messaging"],
+    "description": "Whether components call each other and wait for a response, or exchange messages and continue.",
+    "question": "Should this interaction be a request/response call or a message?",
+    "tags": ["synchronous", "asynchronous", "messaging", "rest", "queue", "events", "communication"],
+    "aliases": ["sync vs async", "request response vs messaging"],
+    "problems": ["how do I handle asynchronous communication", "when should I introduce a message broker", "one slow service takes everything down"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "In synchronous communication the caller waits for the callee's answer (HTTP, gRPC). In asynchronous communication the caller hands off a message (queue, stream, event) and continues; the work happens later.",
+      "context": "Synchronous calls couple availability: if the callee is down, the caller fails. Asynchronous messaging decouples availability and absorbs load spikes but introduces eventual consistency, delivery semantics and new operational components.",
+      "whenToUse": ["Synchronous: the caller needs the result to continue (reads, validation, user-facing queries).", "Asynchronous: the work can complete later (emails, indexing, billing pipelines), load is bursty, or several consumers need the same event."],
+      "whenNotToUse": ["Avoid long synchronous chains across many services.", "Avoid async when the user needs immediate confirmation of a result you cannot yet guarantee."],
+      "alternatives": ["Synchronous call with a short timeout and a fallback.", "Outbox pattern to publish events reliably from a database transaction.", "Batch processing for non-urgent work."],
+      "operations": "Async systems need monitoring of queue depth and consumer lag, dead-letter handling, idempotent consumers and replay procedures.",
+      "failureModes": ["Sync: cascade failures and retry storms.", "Async: poison messages, unbounded queue growth, duplicate processing without idempotency, lost events without an outbox."],
+      "summary": "Use synchronous calls for queries the caller needs now; use messages for work that can finish later or must survive the callee being unavailable."
+    },
+    "tradeoffs": {
+      "options": ["Synchronous", "Asynchronous"],
+      "rows": [
+        { "dimension": "Performance", "values": ["Latency adds up across the call chain", "Caller latency is low; end-to-end completion is later"] },
+        { "dimension": "Reliability", "values": ["Callee outage propagates to callers", "Buffers absorb outages and spikes"] },
+        { "dimension": "Complexity", "values": ["Simple mental model", "Eventual consistency, ordering and idempotency"] },
+        { "dimension": "Operations", "values": ["Timeouts, retries, circuit breakers", "Broker operations, lag monitoring, dead letters"] },
+        { "dimension": "Developer Experience", "values": ["Easy to trace and test", "Harder to debug flows across time"] },
+        { "dimension": "Flexibility", "values": ["Point-to-point coupling", "New consumers can subscribe without changing producers"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Synchronous", "chooseWhen": ["User-facing reads", "The result is needed to continue", "Short call chains"], "avoidWhen": ["Chains deeper than two or three hops"] },
+      { "option": "Asynchronous", "chooseWhen": ["Work can complete later", "Bursty load", "Multiple consumers per event"], "avoidWhen": ["You cannot make consumers idempotent"] }
+    ],
+    "relations": [
+      { "type": "introduces-risk", "target": "cascade-failures", "note": "Deep synchronous chains spread failure." },
+      { "type": "precedes", "target": "event-driven-architecture", "note": "Choosing async for many interactions leads to an event-driven design." },
+      { "type": "precedes", "target": "rest-vs-grpc", "note": "For the synchronous paths, the next question is the protocol." },
+      { "type": "related-to", "target": "queue-buffering", "note": "The simplest async pattern for absorbing load." },
+      { "type": "related-to", "target": "rabbitmq-vs-kafka", "note": "Broker choice once async is chosen." }
+    ]
+  },
+  {
+    "id": "rest-vs-grpc",
+    "title": "REST vs gRPC",
+    "type": "comparison",
+    "layer": "architecture-decisions",
+    "subcategory": "communication-patterns",
+    "description": "Comparing resource-oriented HTTP/JSON APIs with contract-first binary RPC for service-to-service and public APIs.",
+    "question": "Should our APIs use REST over HTTP/JSON or gRPC?",
+    "tags": ["rest", "grpc", "http", "protobuf", "api design"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "gRPC documentation", "url": "https://grpc.io/docs/", "publisher": "gRPC" }],
+    "sections": {
+      "overview": "REST models APIs as resources over HTTP, usually with JSON. gRPC defines services and messages in Protocol Buffers and uses HTTP/2 with generated clients and streaming support.",
+      "whenToUse": ["REST: public APIs, browser clients, broad tooling and cacheability.", "gRPC: internal service-to-service calls with strict contracts, high call volume or streaming."],
+      "whenNotToUse": ["REST: high-volume internal calls where payload size and schema drift hurt.", "gRPC: browser-facing APIs without a proxy, or teams without schema management discipline."],
+      "operations": "gRPC needs HTTP/2-aware load balancing (L7) because long-lived connections defeat connection-level balancing.",
+      "summary": "REST at the edge, gRPC where internal contracts and efficiency matter is a common split."
+    },
+    "tradeoffs": {
+      "options": ["REST (HTTP/JSON)", "gRPC"],
+      "rows": [
+        { "dimension": "Performance", "values": ["Text payloads; adequate for most uses", "Compact binary payloads; multiplexed streams"] },
+        { "dimension": "Complexity", "values": ["Low barrier; loose contracts", "Code generation and schema management"] },
+        { "dimension": "Operations", "values": ["Works with any proxy and cache", "Needs L7 load balancing for HTTP/2"] },
+        { "dimension": "Developer Experience", "values": ["Easy to inspect with curl and browsers", "Typed clients; harder ad-hoc debugging"] },
+        { "dimension": "Flexibility", "values": ["Easy for third parties", "Best inside one organization"] }
+      ]
+    },
+    "guidance": [
+      { "option": "REST (HTTP/JSON)", "chooseWhen": ["Public or partner APIs", "Browser clients", "HTTP caching matters"] },
+      { "option": "gRPC", "chooseWhen": ["Internal high-volume calls", "Streaming", "Polyglot services sharing strict contracts"] }
+    ],
+    "relations": [
+      { "type": "related-to", "target": "l4-vs-l7-load-balancing", "note": "gRPC's long-lived HTTP/2 connections need L7 balancing." },
+      { "type": "related-to", "target": "api-gateway", "note": "Gateways often translate between external REST and internal protocols." }
+    ]
+  },
+  {
+    "id": "containers-vs-serverless",
+    "title": "Containers vs Serverless",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "deployment-models",
+    "secondaryLayers": ["compute", "cost"],
+    "description": "Whether to package workloads as long-running containers or as event-driven functions billed per invocation.",
+    "question": "Should this workload run in containers or as serverless functions?",
+    "tags": ["containers", "serverless", "lambda", "faas", "docker", "deployment", "compute"],
+    "aliases": ["serverless vs containers", "lambda vs containers"],
+    "problems": ["my deployment process is becoming complicated", "how do I reduce cloud costs for spiky traffic"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Containers package an application and its dependencies into an image that runs as a long-lived process on a container platform. Serverless functions run code in response to events, scale to zero, and are billed for execution time.",
+      "context": "The choice is about who manages capacity and what constraints you accept. Serverless removes server management and idle cost but imposes limits on execution time, cold starts and runtime environment. Containers run anything but need an orchestrator and capacity planning.",
+      "whenToUse": ["Serverless: event-driven or spiky workloads, glue code, low-traffic APIs, small teams without platform capacity.", "Containers: steady high throughput, long-running processes, specific runtime needs, or portability across providers."],
+      "whenNotToUse": ["Serverless: latency-critical paths sensitive to cold starts, long jobs, workloads holding many database connections.", "Containers: very spiky low-volume workloads where idle capacity dominates cost."],
+      "alternatives": ["Serverless containers (e.g. AWS Fargate, Cloud Run) that combine container packaging with managed capacity.", "Platform-as-a-service offerings."],
+      "cost": "Serverless is cheap at low and spiky volume and can become expensive at sustained high volume. Containers have a floor cost but cheaper unit cost when well utilized.",
+      "operations": "Serverless shifts work to configuration, permissions and observability across many small functions. Containers need image builds, orchestration, patching and autoscaling.",
+      "failureModes": ["Serverless functions overwhelming a database with connections during a burst.", "Containers over-provisioned for peak and idle most of the time."],
+      "summary": "Start serverless for event-driven and low-volume work; move to containers when sustained volume, runtime needs or latency make the constraints costly."
+    },
+    "tradeoffs": {
+      "options": ["Containers", "Serverless functions"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Pay for provisioned capacity; low unit cost when busy", "Pay per invocation; zero idle cost; expensive at sustained volume"] },
+        { "dimension": "Performance", "values": ["Warm processes; predictable latency", "Cold starts; execution limits"] },
+        { "dimension": "Scalability", "values": ["Scales with orchestrator autoscaling", "Scales automatically per request, within concurrency limits"] },
+        { "dimension": "Operations", "values": ["Images, orchestration, patching, capacity", "Configuration, permissions, many small deployables"] },
+        { "dimension": "Developer Experience", "values": ["Same container locally and in production", "Fast to ship; harder local emulation"] },
+        { "dimension": "Flexibility", "values": ["Portable across providers", "Tied to provider event sources and APIs"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Containers", "chooseWhen": ["Steady traffic", "Long-running or stateful-connection workloads", "Portability matters"] },
+      { "option": "Serverless functions", "chooseWhen": ["Spiky or low volume", "Event-driven glue", "No platform team"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "docker", "note": "The container packaging standard." },
+      { "type": "evaluates", "target": "aws-lambda", "note": "A representative FaaS platform." },
+      { "type": "precedes", "target": "should-you-adopt-kubernetes", "note": "Choosing containers raises the orchestration question." },
+      { "type": "related-to", "target": "cold-starts", "note": "The main latency constraint of serverless." },
+      { "type": "introduces-risk", "target": "thundering-herd", "note": "Unbounded function concurrency can flood downstream databases." }
+    ]
+  },
+  {
+    "id": "kubernetes-vs-ecs",
+    "title": "Kubernetes vs Amazon ECS",
+    "type": "comparison",
+    "layer": "architecture-decisions",
+    "subcategory": "deployment-models",
+    "secondaryLayers": ["compute"],
+    "description": "Comparing the portable, extensible Kubernetes ecosystem with AWS's simpler, integrated container orchestrator.",
+    "question": "On AWS, should we run containers on Kubernetes (EKS) or ECS?",
+    "tags": ["kubernetes", "ecs", "eks", "fargate", "aws", "container orchestration"],
+    "aliases": ["eks vs ecs"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Kubernetes is an open-source orchestrator with a large ecosystem and extension model. Amazon ECS is an AWS-native orchestrator with fewer concepts, deep AWS integration, and a serverless launch type (Fargate).",
+      "whenToUse": ["Kubernetes: multi-cloud or on-premises requirements, need for ecosystem tools (operators, service mesh), or an existing platform team with Kubernetes skills.", "ECS: AWS-only workloads, small teams, and a preference for fewer moving parts."],
+      "whenNotToUse": ["Kubernetes: teams without capacity to own upgrades and add-ons.", "ECS: when portability or Kubernetes-native tooling is a hard requirement."],
+      "operations": "EKS still leaves add-ons, node upgrades, networking plugins and ingress to you. ECS with Fargate leaves mostly task definitions and service configuration.",
+      "summary": "Choose ECS for simplicity on AWS; choose Kubernetes when you need its ecosystem or portability and can staff it."
+    },
+    "tradeoffs": {
+      "options": ["Kubernetes (EKS)", "Amazon ECS"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Control plane fee plus add-on and staff cost", "No control plane fee; lower operational cost"] },
+        { "dimension": "Complexity", "values": ["Many concepts and extension points", "Fewer concepts"] },
+        { "dimension": "Operations", "values": ["Cluster and add-on upgrades", "Mostly managed by AWS"] },
+        { "dimension": "Organizational Fit", "values": ["Platform team with Kubernetes skills", "Small teams on AWS"] },
+        { "dimension": "Flexibility", "values": ["Portable; huge ecosystem", "AWS-specific"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Kubernetes (EKS)", "chooseWhen": ["Portability required", "Platform team exists", "Need operators or mesh"] },
+      { "option": "Amazon ECS", "chooseWhen": ["AWS only", "Small team", "Want minimal orchestration overhead"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "kubernetes", "note": "The portable option." },
+      { "type": "evaluates", "target": "amazon-ecs", "note": "The AWS-native option." },
+      { "type": "related-to", "target": "should-you-adopt-kubernetes", "note": "The broader adoption question." }
+    ]
+  },
+  {
+    "id": "managed-vs-self-managed-kubernetes",
+    "title": "Managed vs Self-Managed Kubernetes",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "deployment-models",
+    "secondaryLayers": ["compute"],
+    "description": "Whether to run Kubernetes on a provider-managed control plane (EKS, GKE, AKS) or operate the whole cluster yourself.",
+    "question": "Should we run our own Kubernetes control plane or use a managed service?",
+    "tags": ["kubernetes", "eks", "gke", "aks", "managed kubernetes", "self-managed"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Managed Kubernetes runs and upgrades the control plane (API server, etcd, controllers) for you. Self-managed Kubernetes means you operate everything, including etcd backups, certificates and version upgrades.",
+      "whenToUse": ["Managed: almost all cloud deployments.", "Self-managed: on-premises or edge environments, strict sovereignty requirements, or specialized needs a provider does not meet."],
+      "whenNotToUse": ["Self-managed is rarely justified in a public cloud where a managed option exists."],
+      "operations": "Even managed Kubernetes leaves nodes, add-ons (CNI, ingress controller, DNS, autoscaler), security policy and workload configuration to you.",
+      "failureModes": ["etcd data loss without tested backups (self-managed).", "Falling several versions behind and facing forced, risky upgrades."],
+      "summary": "Use managed Kubernetes unless the environment makes it impossible."
+    },
+    "tradeoffs": {
+      "options": ["Managed", "Self-managed"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Control plane fee; less staff time", "No fee; significant staff time"] },
+        { "dimension": "Reliability", "values": ["Provider-run control plane SLA", "Depends on your etcd and upgrade practice"] },
+        { "dimension": "Operations", "values": ["Nodes and add-ons", "Everything, including control plane"] },
+        { "dimension": "Flexibility", "values": ["Provider version and feature limits", "Full control"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Managed", "chooseWhen": ["Public cloud", "Small or medium platform team"] },
+      { "option": "Self-managed", "chooseWhen": ["On-premises or edge", "Hard sovereignty constraints", "Dedicated Kubernetes operations team"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "kubernetes", "note": "Both options run Kubernetes; the difference is who operates the control plane." },
+      { "type": "contributes-to", "target": "premature-kubernetes", "note": "Self-managing clusters multiplies the cost of adopting Kubernetes too early." },
+      { "type": "related-to", "target": "managed-services-vs-self-managed", "note": "A specific case of the general managed vs self-managed decision." }
+    ]
+  },
+  {
+    "id": "build-vs-buy",
+    "title": "Build vs Buy",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "organizational-architecture",
+    "secondaryLayers": ["cost", "platform-engineering"],
+    "description": "Whether to build a capability in-house or adopt a vendor or open-source product.",
+    "question": "Should we build this capability ourselves or buy it?",
+    "tags": ["build vs buy", "vendor", "saas", "open source", "strategy"],
+    "problems": ["should we build or buy infrastructure capabilities", "are we overengineering"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Every capability can be built, bought as SaaS, or assembled from open source. The decision depends on whether the capability differentiates the business and on the total cost of ownership over several years.",
+      "context": "Teams underestimate the cost of building because they price the first version, not the years of maintenance, security patches, on-call and feature requests that follow.",
+      "whenToUse": ["Build when the capability is a core differentiator or no product fits a hard requirement.", "Buy when the capability is commodity (auth, payments, observability, CI) and vendors are mature."],
+      "whenNotToUse": ["Do not build commodity infrastructure because it seems simple at first.", "Do not buy when the vendor's model conflicts with core data, compliance or latency requirements."],
+      "cost": "Compare multi-year total cost: licence or usage fees versus engineering salaries for build, maintenance and on-call, plus migration cost if you change later.",
+      "organization": "Building creates an internal product that needs an owner. Buying creates a vendor relationship that needs management and an exit plan.",
+      "failureModes": ["Internal tools with no owner after the builder leaves.", "Vendor lock-in without an exit strategy."],
+      "summary": "Buy commodity, build differentiators, and revisit as the market and your scale change."
+    },
+    "tradeoffs": {
+      "options": ["Build", "Buy"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Salaries and maintenance for years", "Fees that grow with usage"] },
+        { "dimension": "Complexity", "values": ["You own all of it", "Integration and vendor management"] },
+        { "dimension": "Organizational Fit", "values": ["Needs a long-term owning team", "Needs vendor management capability"] },
+        { "dimension": "Flexibility", "values": ["Exactly what you need", "Vendor roadmap and lock-in"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Build", "chooseWhen": ["Core differentiator", "No product meets a hard requirement"] },
+      { "option": "Buy", "chooseWhen": ["Commodity capability", "Mature vendors", "Small team"] }
+    ],
+    "relations": [
+      { "type": "related-to", "target": "managed-services-vs-self-managed", "note": "The infrastructure-level version of this decision." },
+      { "type": "introduces-risk", "target": "knowledge-silos", "note": "Home-grown systems often depend on their original authors." },
+      { "type": "related-to", "target": "cost-benefit-analysis", "note": "The framework for comparing total cost of ownership." }
+    ]
+  },
+  {
+    "id": "platform-team-vs-embedded-teams",
+    "title": "Platform Team vs Embedded Teams",
+    "type": "decision",
+    "layer": "architecture-decisions",
+    "subcategory": "organizational-architecture",
+    "secondaryLayers": ["platform-engineering"],
+    "description": "Whether infrastructure expertise sits in a central platform team or is embedded in product teams.",
+    "question": "Should we centralize infrastructure work in a platform team or embed it in product teams?",
+    "tags": ["platform team", "devops", "sre", "team topologies", "organization"],
+    "problems": ["should we invest in platform engineering", "my engineering team is struggling with service ownership"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A platform team builds shared infrastructure and tooling as an internal product. Embedded models place infrastructure engineers inside product teams, who own their stack end to end.",
+      "context": "The choice is driven by how many teams share the same problems. With few teams, a central team is overhead. With many, duplicated infrastructure work and inconsistent security become expensive.",
+      "whenToUse": ["Platform team: many product teams repeat the same infrastructure work; standardization and security baselines matter.", "Embedded: few teams, very different stacks, or an early stage where speed beats consistency."],
+      "whenNotToUse": ["A platform team without a product mindset becomes a ticket queue.", "Embedded models at large scale lead to duplicated, inconsistent infrastructure."],
+      "organization": "Platform teams succeed when they offer self-service with clear interfaces and measure adoption, not when they gate changes.",
+      "failureModes": ["Platform team bottleneck.", "Ownership confusion between platform and product teams."],
+      "summary": "Embed early; create a platform team when shared infrastructure work across teams is clearly duplicated, and run it as a product."
+    },
+    "tradeoffs": {
+      "options": ["Central platform team", "Embedded infrastructure"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Dedicated headcount; less duplication", "No central cost; duplicated effort"] },
+        { "dimension": "Security", "values": ["Consistent baselines", "Varies by team"] },
+        { "dimension": "Developer Experience", "values": ["Self-service if done well; queue if not", "Full autonomy; more cognitive load"] },
+        { "dimension": "Organizational Fit", "values": ["Many teams with shared needs", "Few teams or divergent stacks"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Central platform team", "chooseWhen": ["More than a handful of product teams", "Repeated infrastructure work", "Compliance needs"] },
+      { "option": "Embedded infrastructure", "chooseWhen": ["Early stage", "Few teams", "Divergent technical needs"] }
+    ],
+    "relations": [
+      { "type": "can-cause", "target": "platform-team-bottleneck", "note": "Central teams that gate changes become a queue." },
+      { "type": "introduces-risk", "target": "ownership-confusion", "note": "The line between platform and product responsibility must be explicit." },
+      { "type": "precedes", "target": "should-you-build-an-internal-developer-platform", "note": "A platform team will soon ask whether to build an IDP." },
+      { "type": "related-to", "target": "conways-law", "note": "Team structure shapes the platform you build." }
+    ]
+  },
+  {
+    "id": "conways-law",
+    "title": "Conway's Law",
+    "type": "concept",
+    "layer": "architecture-decisions",
+    "subcategory": "organizational-architecture",
+    "description": "Systems tend to mirror the communication structure of the organizations that build them.",
+    "tags": ["conway's law", "organization", "team topology", "inverse conway maneuver"],
+    "aliases": ["inverse conway maneuver"],
+    "problems": ["our architecture keeps fighting our team structure"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Conway's Law", "url": "https://www.melconway.com/Home/Conways_Law.html", "publisher": "Mel Conway" }],
+    "sections": {
+      "overview": "Melvin Conway observed in 1968 that organizations design systems whose structure copies the organization's communication structure. Teams that do not talk build components that do not integrate well; teams that share everything build tightly coupled systems.",
+      "application": ["Draw service and module boundaries where team boundaries are, or change team boundaries to match the architecture you want (the 'inverse Conway maneuver').", "Treat a reorganization as an architecture change, and an architecture change as a reorganization."],
+      "examples": ["A single team owning ten microservices tends to deploy them together, producing a distributed monolith.", "Two teams sharing one database schema end up coordinating every migration."],
+      "limitations": "Conway's Law describes a tendency, not a rule. It does not say which structure is right.",
+      "summary": "Architecture decisions are organizational decisions. Plan both together."
+    },
+    "relations": [
+      { "type": "influences", "target": "microservices", "note": "Service boundaries work when they match team ownership." },
+      { "type": "related-to", "target": "ownership-confusion", "note": "Mismatched team and system boundaries produce unclear ownership." },
+      { "type": "related-to", "target": "systems-thinking", "note": "Both look at the system and the organization together." }
+    ]
+  }
+]

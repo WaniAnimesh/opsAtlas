@@ -1,0 +1,384 @@
+[
+  {
+    "id": "premature-microservices",
+    "title": "Premature Microservices",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "architectural",
+    "secondaryLayers": ["architecture-decisions"],
+    "description": "Splitting a system into services before the organization or domain is ready, producing a distributed monolith.",
+    "tags": ["premature microservices", "distributed monolith", "overengineering", "microservices"],
+    "aliases": ["distributed monolith"],
+    "problems": ["are we overengineering", "our microservices must deploy together"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "MonolithFirst", "url": "https://martinfowler.com/bliki/MonolithFirst.html", "publisher": "martinfowler.com" }],
+    "sections": {
+      "overview": "A team adopts microservices while it is small, the domain is still changing, or the platform cannot yet support many services. The result has the operational costs of a distributed system without independent deployability.",
+      "causes": ["Copying the architecture of much larger companies.", "Treating 'scale' as a reason when the bottleneck is elsewhere.", "Boundaries drawn by technical layer (users service, email service) instead of business capability."],
+      "progression": ["A handful of services share a database and a release.", "Features require changes in several services at once.", "Local development needs many services running.", "Incidents involve chains of calls nobody can trace."],
+      "warningSigns": ["Services must be deployed together.", "Most features touch three or more services.", "More services than engineers.", "No distributed tracing, yet many network hops."],
+      "technicalImpact": ["Latency and partial failure from network calls.", "Data consistency problems across service databases.", "Duplicated boilerplate per service."],
+      "businessImpact": ["Slower feature delivery.", "Higher infrastructure and tooling cost."],
+      "organizationalImpact": ["Engineers spend time on plumbing instead of product.", "Ownership of services is unclear."],
+      "prevention": ["Start with a modular monolith.", "Extract a service only with a named benefit (independent release, scaling, isolation) and an owning team.", "Have deployment automation and tracing before the second service."],
+      "recovery": ["Merge tightly coupled services back into one deployable.", "Re-draw boundaries around business capabilities.", "Invest in tracing to find the chattiest paths first."],
+      "summary": "Distribution is a cost you pay for team independence. Without that need, it is pure cost."
+    },
+    "relations": [
+      { "type": "contributes-to", "target": "cascade-failures", "note": "Chatty synchronous call chains spread failure." },
+      { "type": "contributes-to", "target": "ownership-confusion", "note": "Many services, few owners." },
+      { "type": "related-to", "target": "startup-architecture-review", "note": "A key risk to check for in early-stage companies." }
+    ]
+  },
+  {
+    "id": "premature-kubernetes",
+    "title": "Premature Kubernetes",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "architectural",
+    "secondaryLayers": ["compute"],
+    "description": "Adopting Kubernetes before the workload or team needs it, so platform work crowds out product work. Also: when Kubernetes becomes a liability.",
+    "tags": ["premature kubernetes", "kubernetes", "overengineering", "operational debt"],
+    "aliases": ["when kubernetes becomes a liability"],
+    "problems": ["kubernetes is slowing us down", "are we overengineering"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A small team runs a handful of services on Kubernetes and spends a large share of its time on clusters, add-ons, YAML and upgrades instead of the product.",
+      "causes": ["Choosing Kubernetes as the default without comparing simpler platforms.", "Expecting future scale that has not arrived.", "Hiring or résumé incentives."],
+      "progression": ["Initial setup takes weeks.", "Add-ons accumulate (ingress, cert-manager, autoscaler, secrets operator).", "Upgrades are postponed.", "One engineer becomes the cluster expert."],
+      "warningSigns": ["Fewer than ~10 services on a dedicated cluster.", "Cluster versions approaching end of support.", "Deployment issues dominate retrospectives.", "Only one person can debug the cluster."],
+      "technicalImpact": ["Upgrade debt and security exposure.", "Misconfigured resources causing outages."],
+      "businessImpact": ["Slower delivery.", "Staff cost exceeding the infrastructure it manages."],
+      "organizationalImpact": ["Knowledge silo around the cluster.", "Product engineers burdened with infrastructure."],
+      "prevention": ["Start on ECS/Fargate, Cloud Run or a PaaS.", "Adopt Kubernetes when service count, ecosystem needs or portability justify it, with a named owner."],
+      "recovery": ["Move to a managed control plane at minimum.", "Introduce a golden path that hides cluster details.", "Consider migrating simple services to a managed container platform."],
+      "summary": "Kubernetes becomes a liability when the team spends more effort running it than it saves."
+    },
+    "relations": [
+      { "type": "contributes-to", "target": "knowledge-silos", "note": "Cluster knowledge concentrates in one person." },
+      { "type": "related-to", "target": "operational-debt", "note": "A common source of operational debt." }
+    ]
+  },
+  {
+    "id": "over-sharding",
+    "title": "Over-Sharding",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "architectural",
+    "secondaryLayers": ["databases"],
+    "description": "Partitioning data earlier or more finely than necessary, making queries, transactions and operations harder.",
+    "tags": ["over-sharding", "sharding", "partitioning", "database"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Data is split across many shards before a single database was the bottleneck, or with a shard key that does not match access patterns.",
+      "causes": ["Planning for hypothetical scale.", "Choosing a shard key without analysing queries."],
+      "progression": ["Cross-shard queries appear for common features.", "Transactions span shards.", "Rebalancing and schema changes become multi-day operations."],
+      "warningSigns": ["Many shards with low utilization.", "Application-level joins across shards.", "Frequent scatter-gather queries."],
+      "technicalImpact": ["Complex queries and consistency problems."],
+      "businessImpact": ["Slower feature delivery; higher database cost."],
+      "organizationalImpact": ["Schema changes need specialist coordination."],
+      "prevention": ["Exhaust vertical scaling, indexing, caching and replicas first.", "Choose shard keys from real access patterns.", "Start with few, large shards."],
+      "recovery": ["Consolidate shards.", "Move to a distributed SQL database that handles partitioning."],
+      "summary": "Shard late, coarsely, and on the right key."
+    },
+    "relations": [
+      { "type": "related-to", "target": "vertical-vs-horizontal-scaling", "note": "Vertical scaling often postpones sharding for years." }
+    ]
+  },
+  {
+    "id": "over-abstraction",
+    "title": "Over-Abstraction",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "architectural",
+    "secondaryLayers": ["platform-engineering"],
+    "description": "Layers of frameworks, platforms or patterns that hide what the system does and slow every change.",
+    "tags": ["over-abstraction", "overengineering", "accidental complexity", "platform"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Abstractions are added for flexibility that is never used: generic platforms, multi-cloud wrappers, plugin systems, event sourcing for CRUD. Engineers must understand the abstraction and the thing underneath.",
+      "causes": ["Designing for hypothetical future requirements.", "Platform teams hiding necessary controls.", "Pattern enthusiasm."],
+      "progression": ["Simple changes require touching several layers.", "Debugging requires reading framework internals.", "Teams bypass the abstraction, leaving two ways to do everything."],
+      "warningSigns": ["Abstractions with exactly one implementation.", "Frequent 'escape hatch' requests.", "New hires take weeks to make a first change."],
+      "technicalImpact": ["Performance overhead and harder debugging."],
+      "businessImpact": ["Slower delivery."],
+      "organizationalImpact": ["Frustration and shadow tooling."],
+      "prevention": ["Abstract after the third concrete case, not before.", "Expose escape hatches.", "Measure the path from idea to production."],
+      "recovery": ["Inline unused abstractions.", "Document and support the direct path."],
+      "summary": "Every abstraction must pay rent."
+    },
+    "relations": [
+      { "type": "related-to", "target": "golden-paths", "note": "Golden paths should guide, not hide." },
+      { "type": "related-to", "target": "first-principles-thinking", "note": "Ask what the abstraction is for." }
+    ]
+  },
+  {
+    "id": "single-point-of-failure",
+    "title": "Single Point of Failure",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "reliability-failures",
+    "secondaryLayers": ["reliability"],
+    "description": "A component whose failure alone takes down the system.",
+    "tags": ["single point of failure", "spof", "redundancy", "availability"],
+    "aliases": ["SPOF"],
+    "problems": ["my system has reliability issues", "one component takes everything down"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A single point of failure (SPOF) is any component, dependency, person or process without redundancy whose failure causes an outage.",
+      "causes": ["Single instances of stateful components.", "Shared dependencies (DNS, identity, configuration, a CDN) that everything relies on.", "Global configuration pushes that reach everywhere at once.", "One person who knows how to recover a system."],
+      "progression": ["Systems grow around an assumed-reliable dependency.", "The dependency's failure mode is never tested.", "It fails and takes everything with it."],
+      "warningSigns": ["Components with 'we've never had a problem with it'.", "No documented failover.", "Changes deployed globally in one step."],
+      "technicalImpact": ["Full outages from single faults."],
+      "businessImpact": ["Downtime and SLA penalties."],
+      "organizationalImpact": ["Hero culture around recovery."],
+      "prevention": ["Redundancy across zones.", "Staged rollouts of configuration and code.", "Dependency mapping and failure testing.", "Cross-training on recovery."],
+      "recovery": ["Fail over to redundant capacity.", "Roll back the global change.", "Postmortem with a systemic fix."],
+      "summary": "Find SPOFs on purpose, including people and processes."
+    },
+    "relations": [
+      { "type": "contributes-to", "target": "cascade-failures", "note": "SPOF failures propagate to every dependent." },
+      { "type": "related-to", "target": "cloudflare-edge-platform", "note": "A global configuration push acted as a single point of failure in Cloudflare's 2019 outage." }
+    ]
+  },
+  {
+    "id": "cascade-failures",
+    "title": "Cascade Failures",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "reliability-failures",
+    "secondaryLayers": ["reliability"],
+    "description": "A failure in one component overloads or blocks others, spreading until large parts of the system are down.",
+    "tags": ["cascade failures", "cascading failure", "overload", "resilience", "timeouts"],
+    "aliases": ["cascading failures"],
+    "problems": ["how do I avoid cascading failures", "one slow service takes everything down", "my system has reliability issues"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Addressing Cascading Failures (SRE book)", "url": "https://sre.google/sre-book/addressing-cascading-failures/", "publisher": "Google" }],
+    "sections": {
+      "overview": "A cascade failure grows through positive feedback: a slow dependency ties up callers' threads or connections, callers slow down, their callers time out and retry, and load concentrates on the remaining healthy capacity until it also fails.",
+      "causes": ["Missing or long timeouts.", "Unbounded retries.", "Shared resource pools across dependencies.", "Load shifting to fewer healthy instances after a partial failure."],
+      "progression": ["Latency rises in one dependency.", "Thread pools and connection pools fill.", "Health checks fail and instances are removed, concentrating load.", "Retries amplify load; the system collapses."],
+      "warningSigns": ["Rising latency followed by rising error rates in callers.", "Pool saturation metrics.", "Health check flapping.", "Retry rate increasing during incidents."],
+      "technicalImpact": ["Wide outages from narrow faults.", "Slow recovery because restarted instances are overwhelmed."],
+      "businessImpact": ["Major incidents and long recovery time."],
+      "organizationalImpact": ["Incident response across many teams at once."],
+      "prevention": ["Timeouts on every remote call.", "Circuit breakers and bulkheads.", "Retry budgets with backoff and jitter.", "Load shedding and graceful degradation.", "Capacity headroom for losing a zone."],
+      "recovery": ["Shed load and stop retries.", "Restore capacity gradually.", "Bring dependencies back in order."],
+      "summary": "Design every call path for its dependency being slow, not just down."
+    },
+    "relations": [
+      { "type": "related-to", "target": "retry-storms", "note": "Retries are a primary amplifier." },
+      { "type": "related-to", "target": "thundering-herd", "note": "Recovery attempts can cause a herd." }
+    ]
+  },
+  {
+    "id": "retry-storms",
+    "title": "Retry Storms",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "reliability-failures",
+    "secondaryLayers": ["reliability"],
+    "description": "Retries multiplying traffic against an already struggling service, preventing it from recovering.",
+    "tags": ["retry storm", "retries", "amplification", "backoff", "overload"],
+    "aliases": ["retry amplification"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "When each layer in a call chain retries failed requests, load multiplies. Three layers retrying three times can turn one request into 27 at the bottom of the stack.",
+      "causes": ["Retries at several layers (client, gateway, mesh, service).", "No backoff or jitter.", "Retrying non-transient errors."],
+      "progression": ["A dependency slows.", "Callers time out and retry.", "Traffic to the dependency multiplies.", "It cannot recover until retries stop."],
+      "warningSigns": ["Request rate at a dependency exceeding user traffic during incidents.", "Retry metrics climbing together with errors."],
+      "technicalImpact": ["Prolonged outages; recovery requires manual load shedding."],
+      "businessImpact": ["Longer incidents."],
+      "organizationalImpact": ["Confusing incident signals across teams."],
+      "prevention": ["Retry at one layer only.", "Exponential backoff with jitter.", "Retry budgets and circuit breakers.", "Retry only idempotent operations."],
+      "recovery": ["Disable retries or open circuit breakers.", "Shed load at the edge."],
+      "summary": "Retries are load. Budget them."
+    },
+    "relations": [
+      { "type": "contributes-to", "target": "cascade-failures", "note": "A common accelerator of cascades." }
+    ]
+  },
+  {
+    "id": "thundering-herd",
+    "title": "Thundering Herd",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "reliability-failures",
+    "secondaryLayers": ["performance"],
+    "description": "Many clients act at the same moment (cache expiry, reconnect, failover) and overwhelm a shared resource.",
+    "tags": ["thundering herd", "cache stampede", "synchronization", "reconnect storm"],
+    "aliases": ["cache stampede", "dogpile"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A thundering herd occurs when a synchronized event causes many clients to hit the same resource simultaneously: a popular cache key expires, a service restarts and all clients reconnect, or traffic fails over to a cold region.",
+      "causes": ["Identical TTLs.", "Clients reconnecting without jitter.", "Cold caches after deploys or failovers.", "Scheduled jobs all starting on the hour."],
+      "progression": ["Synchronized trigger.", "Burst far above normal load.", "Backend saturates; errors trigger retries; the herd grows."],
+      "warningSigns": ["Load spikes aligned with cache TTLs or cron schedules.", "Errors immediately after deploys or failovers."],
+      "technicalImpact": ["Short, intense overloads that can trigger cascades."],
+      "businessImpact": ["Outages during deploys and recoveries."],
+      "organizationalImpact": ["Fear of deploys and failover drills."],
+      "prevention": ["Jitter on TTLs, retries and schedules.", "Request coalescing for cache misses.", "Cache warming before shifting traffic.", "Rate limiting and admission control."],
+      "recovery": ["Rate limit at the edge.", "Warm caches gradually.", "Stagger client reconnects."],
+      "summary": "Randomize anything many clients do at once."
+    },
+    "relations": [
+      { "type": "contributes-to", "target": "cascade-failures", "note": "A herd can push a system into a cascade." }
+    ]
+  },
+  {
+    "id": "secret-sprawl",
+    "title": "Secret Sprawl",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "security-failures",
+    "secondaryLayers": ["security"],
+    "description": "Credentials scattered across code, config files, CI variables, images and chat, with no inventory or rotation.",
+    "tags": ["secret sprawl", "credentials", "leaked secrets", "security"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Secrets are copied wherever they are needed. Nobody knows how many copies exist, who has access, or what breaks if one is rotated.",
+      "causes": ["No central secrets manager.", "Long-lived static credentials.", "Convenience during early development."],
+      "progression": ["Secrets in environment files and CI.", "Copies in images and logs.", "Rotation becomes too risky to attempt."],
+      "warningSigns": ["Secret scanners finding credentials in repositories.", "Credentials older than a year.", "Fear of rotating a key."],
+      "technicalImpact": ["Broad access after a single leak."],
+      "businessImpact": ["Breach risk and compliance findings."],
+      "organizationalImpact": ["Nobody owns credential lifecycle."],
+      "prevention": ["Central secrets manager.", "Workload identity and short-lived credentials.", "Secret scanning in CI."],
+      "recovery": ["Inventory and rotate.", "Migrate consumers to the secrets manager.", "Revoke unused credentials."],
+      "summary": "Fewer, shorter-lived, centrally managed secrets."
+    },
+    "relations": [
+      { "type": "related-to", "target": "exposed-buckets", "note": "Both are access-control hygiene failures." }
+    ]
+  },
+  {
+    "id": "exposed-buckets",
+    "title": "Exposed Buckets",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "security-failures",
+    "secondaryLayers": ["storage", "security"],
+    "description": "Object storage made publicly readable or writable by misconfiguration, exposing sensitive data.",
+    "tags": ["exposed buckets", "s3", "public bucket", "data leak", "misconfiguration"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Buckets are opened for convenience (sharing, static hosting) or through overly broad policies, and sensitive data ends up publicly accessible.",
+      "causes": ["Broad bucket policies or ACLs.", "Mixing public assets and private data in one bucket.", "No guardrails at the account level."],
+      "warningSigns": ["Buckets with public access flags.", "No account-wide public access block.", "No data classification."],
+      "technicalImpact": ["Data exposure."],
+      "businessImpact": ["Breach notification, fines, reputation loss."],
+      "prevention": ["Block public access at the account level by default.", "Serve public content through a CDN with private origins.", "Policy-as-code checks."],
+      "recovery": ["Revoke public access.", "Assess access logs.", "Notify as required."],
+      "summary": "Private by default; public only through deliberate, reviewed paths."
+    },
+    "relations": [
+      { "type": "related-to", "target": "zero-trust", "note": "Least-privilege access applies to data stores too." }
+    ]
+  },
+  {
+    "id": "ownership-confusion",
+    "title": "Ownership Confusion",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "organizational-failures",
+    "description": "Services, data, topics or infrastructure without a clear owning team.",
+    "tags": ["ownership", "service ownership", "orphaned services", "organization"],
+    "aliases": ["orphaned services"],
+    "problems": ["my engineering team is struggling with service ownership", "nobody knows who owns this service"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "When nobody clearly owns a component, it does not get upgraded, alerts go nowhere, and incidents start with 'who owns this?'.",
+      "causes": ["Reorganizations without ownership transfer.", "Shared components (topics, schemas, libraries) owned by 'everyone'.", "More services than teams."],
+      "progression": ["Alerts are muted.", "Dependencies fall behind.", "Incidents take longer because responders are unclear."],
+      "warningSigns": ["Services with no on-call rotation.", "Catalog entries with departed owners.", "Pages routed to a generic channel."],
+      "technicalImpact": ["Unpatched, unmonitored components."],
+      "businessImpact": ["Longer incidents; security exposure."],
+      "organizationalImpact": ["Blame and duplicated effort."],
+      "prevention": ["A service catalog with an owning team for every component.", "Ownership transfer as part of reorganizations.", "Align boundaries with teams (Conway's Law)."],
+      "recovery": ["Audit and assign owners.", "Decommission what nobody needs."],
+      "summary": "Every component needs a team, a pager and a catalog entry."
+    },
+    "relations": [
+      { "type": "related-to", "target": "knowledge-silos", "note": "Unclear ownership often coexists with concentrated knowledge." }
+    ]
+  },
+  {
+    "id": "platform-team-bottleneck",
+    "title": "Platform Team Bottleneck",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "organizational-failures",
+    "secondaryLayers": ["platform-engineering"],
+    "description": "A central platform or infrastructure team becomes a queue that every product team waits on.",
+    "tags": ["platform team", "bottleneck", "ticket queue", "platform engineering"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Product teams must file tickets for environments, deployments or permissions. The platform team is overloaded, and delivery speed across the company drops.",
+      "causes": ["Gatekeeping instead of self-service.", "Platform team understaffed for demand.", "No product management for the platform."],
+      "progression": ["Ticket queues grow.", "Teams build shadow infrastructure to get around them.", "Standards erode."],
+      "warningSigns": ["Lead time dominated by waiting on another team.", "Shadow infrastructure.", "Platform roadmap driven by tickets."],
+      "technicalImpact": ["Inconsistent infrastructure from workarounds."],
+      "businessImpact": ["Slower delivery company-wide."],
+      "organizationalImpact": ["Friction between platform and product teams."],
+      "prevention": ["Self-service golden paths.", "Treat the platform as a product with users and metrics.", "Clear interfaces between platform and product responsibilities."],
+      "recovery": ["Automate the most common ticket types.", "Embed platform engineers temporarily with heavy users."],
+      "summary": "Platforms should remove waiting, not create it."
+    },
+    "relations": [
+      { "type": "related-to", "target": "golden-paths", "note": "Self-service paths are the main fix." }
+    ]
+  },
+  {
+    "id": "knowledge-silos",
+    "title": "Knowledge Silos",
+    "type": "failure-pattern",
+    "layer": "failure-patterns",
+    "subcategory": "organizational-failures",
+    "description": "Critical operational or design knowledge held by one person or a small group.",
+    "tags": ["knowledge silos", "bus factor", "documentation", "on-call"],
+    "aliases": ["bus factor"],
+    "problems": ["only one person knows how to deploy"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Specialist systems and undocumented processes concentrate knowledge. When that person is unavailable, incidents last longer and changes stall.",
+      "causes": ["Specialist infrastructure run by one expert.", "No runbooks or design records.", "Hero culture during incidents."],
+      "progression": ["The expert handles every incident.", "Others avoid the system.", "The expert leaves or burns out."],
+      "warningSigns": ["The same name on every incident.", "Changes waiting for one reviewer.", "No runbook for critical recovery."],
+      "technicalImpact": ["Slow recovery; risky changes."],
+      "businessImpact": ["Key-person risk."],
+      "organizationalImpact": ["Burnout and attrition."],
+      "prevention": ["Runbooks and architecture decision records.", "Rotation of on-call and change ownership.", "Prefer managed services over specialist self-hosted systems."],
+      "recovery": ["Pair on incidents and changes.", "Document while the expert is still available."],
+      "summary": "If only one person can fix it, it is a single point of failure."
+    },
+    "relations": [
+      { "type": "contributes-to", "target": "single-point-of-failure", "note": "People can be single points of failure." }
+    ]
+  }
+]

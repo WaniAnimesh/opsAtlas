@@ -1,0 +1,757 @@
+[
+  {
+    "id": "foundations",
+    "number": 1,
+    "title": "Foundations",
+    "purpose": "Create common mental models before architectural choices.",
+    "whyItMatters": "Most architecture arguments are really disagreements about economics, consistency or scaling assumptions. Settling those first makes every later decision faster and less political.",
+    "subcategories": [
+      {
+        "id": "engineering-economics",
+        "title": "Engineering Economics",
+        "topics": [
+          { "title": "Cost vs Performance", "entity": "cost-vs-performance" },
+          { "title": "Cost vs Reliability", "entity": "does-your-business-need-five-nines" },
+          { "title": "Cost vs Complexity" },
+          { "title": "Technical Debt" },
+          { "title": "Operational Debt", "entity": "operational-debt" },
+          { "title": "Architecture ROI" }
+        ]
+      },
+      {
+        "id": "distributed-systems",
+        "title": "Distributed Systems Fundamentals",
+        "topics": [
+          { "title": "Latency" },
+          { "title": "Replication", "entity": "read-replicas" },
+          { "title": "Consistency", "entity": "consistency-models" },
+          { "title": "Fault Tolerance" },
+          { "title": "Consensus" },
+          { "title": "Partitions" },
+          { "title": "Caching", "entity": "caching" },
+          { "title": "Availability", "entity": "does-your-business-need-five-nines" }
+        ]
+      },
+      {
+        "id": "scaling",
+        "title": "Scaling Fundamentals",
+        "topics": [
+          { "title": "Scaling Fundamentals", "entity": "scaling-fundamentals" },
+          { "title": "Vertical vs Horizontal Scaling", "entity": "vertical-vs-horizontal-scaling" },
+          { "title": "Elasticity" },
+          { "title": "Auto Scaling" },
+          { "title": "Load Distribution", "entity": "l4-vs-l7-load-balancing" }
+        ]
+      },
+      {
+        "id": "cloud",
+        "title": "Cloud Fundamentals",
+        "topics": [
+          { "title": "IaaS, PaaS, SaaS and FaaS", "entity": "cloud-service-models" },
+          { "title": "Regions and Availability Zones", "entity": "regions-and-availability-zones" },
+          { "title": "Shared Responsibility" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "architecture-decisions",
+    "number": 2,
+    "title": "Architecture Decisions",
+    "priority": "Highest",
+    "purpose": "The central hub: the questions that shape system topology, communication, deployment and team structure.",
+    "whyItMatters": "These decisions are expensive to reverse and constrain everything else. Each page states the problem, the alternatives, the tradeoffs and what tends to follow.",
+    "subcategories": [
+      {
+        "id": "system-topology",
+        "title": "System Topology",
+        "topics": [
+          { "title": "Monolith vs Microservices", "entity": "monolith-vs-microservices" },
+          { "title": "Modular Monolith vs Microservices", "entity": "modular-monolith-vs-microservices" },
+          { "title": "Microservices", "entity": "microservices" },
+          { "title": "Modular Monolith", "entity": "modular-monolith" },
+          { "title": "SOA vs Microservices" },
+          { "title": "Cell Architecture vs Shared Platform" },
+          { "title": "Multi-Tenant vs Single-Tenant" }
+        ]
+      },
+      {
+        "id": "communication-patterns",
+        "title": "Communication Patterns",
+        "topics": [
+          { "title": "REST vs GraphQL" },
+          { "title": "REST vs gRPC", "entity": "rest-vs-grpc" },
+          { "title": "Sync vs Async", "entity": "sync-vs-async" },
+          { "title": "Polling vs Event Driven", "entity": "event-driven-architecture" },
+          { "title": "Webhooks vs APIs" }
+        ]
+      },
+      {
+        "id": "deployment-models",
+        "title": "Deployment Models",
+        "topics": [
+          { "title": "VMs vs Containers" },
+          { "title": "Containers vs Serverless", "entity": "containers-vs-serverless" },
+          { "title": "Kubernetes vs ECS", "entity": "kubernetes-vs-ecs" },
+          { "title": "Managed Kubernetes vs Self Managed Kubernetes", "entity": "managed-vs-self-managed-kubernetes" }
+        ]
+      },
+      {
+        "id": "organizational-architecture",
+        "title": "Organizational Architecture",
+        "topics": [
+          { "title": "Platform Team vs Embedded Teams", "entity": "platform-team-vs-embedded-teams" },
+          { "title": "Conway's Law", "entity": "conways-law" },
+          { "title": "Centralization vs Decentralization" },
+          { "title": "Build vs Buy", "entity": "build-vs-buy" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "compute",
+    "number": 3,
+    "title": "Compute",
+    "purpose": "Choose where code runs: virtual machines, containers, orchestrators or functions.",
+    "whyItMatters": "The compute model sets your deployment workflow, scaling behaviour, cost curve and the operational skills your team must have.",
+    "subcategories": [
+      {
+        "id": "virtual-machines",
+        "title": "Virtual Machines",
+        "topics": [{ "title": "EC2" }, { "title": "Azure VM" }, { "title": "Google Compute Engine" }]
+      },
+      {
+        "id": "containers",
+        "title": "Containers",
+        "topics": [
+          { "title": "Docker", "entity": "docker" },
+          { "title": "Container Design" },
+          { "title": "Container Security" },
+          { "title": "Resource Isolation" }
+        ]
+      },
+      {
+        "id": "kubernetes-hub",
+        "title": "Kubernetes Decision Center",
+        "topics": [
+          { "title": "Should You Adopt Kubernetes?", "entity": "should-you-adopt-kubernetes" },
+          { "title": "Kubernetes", "entity": "kubernetes" },
+          { "title": "When Kubernetes Becomes a Liability", "entity": "premature-kubernetes" },
+          { "title": "Managed vs Self-Managed Kubernetes", "entity": "managed-vs-self-managed-kubernetes" },
+          { "title": "Kubernetes vs ECS", "entity": "kubernetes-vs-ecs" },
+          { "title": "Ingress", "entity": "ingress" },
+          { "title": "Service Mesh", "entity": "service-mesh" },
+          { "title": "Kubernetes Maturity Model" },
+          { "title": "Node Pools" },
+          { "title": "Scheduling" },
+          { "title": "API Server" },
+          { "title": "Controller Patterns" }
+        ]
+      },
+      {
+        "id": "serverless",
+        "title": "Serverless",
+        "topics": [
+          { "title": "AWS Lambda", "entity": "aws-lambda" },
+          { "title": "Amazon ECS", "entity": "amazon-ecs" },
+          { "title": "Cold Starts", "entity": "cold-starts" },
+          { "title": "Azure Functions" },
+          { "title": "Cloudflare Workers" },
+          { "title": "Google Cloud Functions" },
+          { "title": "Cost Models" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "networking",
+    "number": 4,
+    "title": "Networking",
+    "purpose": "Understand how traffic reaches and moves through a system.",
+    "whyItMatters": "Networking choices decide latency, blast radius, and where security and routing policy live.",
+    "subcategories": [
+      {
+        "id": "traffic-management",
+        "title": "Traffic Management",
+        "topics": [
+          { "title": "DNS" },
+          { "title": "Anycast", "entity": "cloudflare-edge-platform" },
+          { "title": "Geo Routing" },
+          { "title": "Traffic Steering" },
+          { "title": "Global Load Balancing" }
+        ]
+      },
+      {
+        "id": "load-balancing",
+        "title": "Load Balancing",
+        "topics": [
+          { "title": "L4 vs L7", "entity": "l4-vs-l7-load-balancing" },
+          { "title": "NGINX", "entity": "nginx" },
+          { "title": "Envoy", "entity": "envoy" },
+          { "title": "HAProxy" },
+          { "title": "Cloud Load Balancers" }
+        ]
+      },
+      {
+        "id": "cdn",
+        "title": "CDN Systems",
+        "topics": [
+          { "title": "CDN vs No CDN", "entity": "cdn-vs-no-cdn" },
+          { "title": "Cloudflare", "entity": "cloudflare-edge-platform" },
+          { "title": "CloudFront" },
+          { "title": "Fastly" },
+          { "title": "Akamai" },
+          { "title": "Multi-CDN Strategies" },
+          { "title": "Edge Caching Models" }
+        ]
+      },
+      {
+        "id": "api-delivery",
+        "title": "API Delivery",
+        "topics": [
+          { "title": "API Gateway", "entity": "api-gateway" },
+          { "title": "Service Discovery", "entity": "service-discovery" },
+          { "title": "Consul", "entity": "consul" },
+          { "title": "Reverse Proxy", "entity": "nginx" },
+          { "title": "Edge Routing" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "databases",
+    "number": 5,
+    "title": "Databases",
+    "priority": "Critical",
+    "purpose": "Match data models, consistency and scaling behaviour to the workload.",
+    "whyItMatters": "Data outlives code. Database decisions are the hardest to migrate away from and drive most availability and consistency tradeoffs.",
+    "subcategories": [
+      {
+        "id": "relational",
+        "title": "Relational Databases",
+        "topics": [
+          { "title": "PostgreSQL", "entity": "postgresql" },
+          { "title": "MySQL", "entity": "mysql" },
+          { "title": "PostgreSQL vs MySQL", "entity": "postgresql-vs-mysql" },
+          { "title": "Single Primary vs Multi Primary", "entity": "single-primary-vs-multi-primary" },
+          { "title": "MariaDB" },
+          { "title": "SQL Server" }
+        ]
+      },
+      {
+        "id": "nosql",
+        "title": "NoSQL",
+        "topics": [
+          { "title": "SQL vs NoSQL", "entity": "sql-vs-nosql" },
+          { "title": "DynamoDB", "entity": "dynamodb" },
+          { "title": "MongoDB" },
+          { "title": "Cassandra" },
+          { "title": "Couchbase" },
+          { "title": "Document vs Relational" }
+        ]
+      },
+      {
+        "id": "distributed-databases",
+        "title": "Distributed Databases",
+        "topics": [{ "title": "CockroachDB" }, { "title": "YugabyteDB" }, { "title": "Spanner" }, { "title": "TiDB" }]
+      },
+      {
+        "id": "database-patterns",
+        "title": "Database Patterns",
+        "topics": [
+          { "title": "Read Replicas", "entity": "read-replicas" },
+          { "title": "Sharding", "entity": "sharding" },
+          { "title": "Database Per Service", "entity": "database-per-service" },
+          { "title": "Event Sourcing", "entity": "event-sourcing" },
+          { "title": "CQRS" },
+          { "title": "Shared Databases" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "storage",
+    "number": 6,
+    "title": "Storage Systems",
+    "purpose": "Choose object, block and file storage by access pattern, durability and cost.",
+    "whyItMatters": "Storage is often the largest line item that nobody owns. Access patterns, egress and lifecycle rules matter more than the vendor.",
+    "subcategories": [
+      {
+        "id": "object-storage",
+        "title": "Object Storage",
+        "topics": [
+          { "title": "Amazon S3", "entity": "amazon-s3" },
+          { "title": "Cloudflare R2", "entity": "cloudflare-r2" },
+          { "title": "S3 vs R2", "entity": "s3-vs-r2" },
+          { "title": "Azure Blob" },
+          { "title": "Google Cloud Storage" },
+          { "title": "Object Storage vs File Storage" }
+        ]
+      },
+      {
+        "id": "block-storage",
+        "title": "Block Storage",
+        "topics": [{ "title": "EBS" }, { "title": "Persistent Disks" }, { "title": "Managed Volumes" }]
+      },
+      {
+        "id": "file-storage",
+        "title": "File Storage",
+        "topics": [{ "title": "NFS" }, { "title": "EFS" }, { "title": "Azure Files" }]
+      }
+    ]
+  },
+  {
+    "id": "messaging",
+    "number": 7,
+    "title": "Messaging & Events",
+    "purpose": "Decide when and how components communicate asynchronously.",
+    "whyItMatters": "Queues and streams decouple teams and absorb load, but they move failure handling, ordering and consistency into your design.",
+    "subcategories": [
+      {
+        "id": "message-brokers",
+        "title": "Message Brokers",
+        "topics": [
+          { "title": "RabbitMQ", "entity": "rabbitmq" },
+          { "title": "Amazon SQS", "entity": "amazon-sqs" },
+          { "title": "RabbitMQ vs Kafka", "entity": "rabbitmq-vs-kafka" },
+          { "title": "Dead-Letter Queues", "entity": "dead-letter-queues" },
+          { "title": "ActiveMQ" },
+          { "title": "RabbitMQ vs SQS" }
+        ]
+      },
+      {
+        "id": "event-streaming",
+        "title": "Event Streaming",
+        "topics": [
+          { "title": "Kafka", "entity": "kafka" },
+          { "title": "Should You Use Kafka?", "entity": "should-you-use-kafka" },
+          { "title": "When Kafka Is Overkill", "entity": "when-kafka-is-overkill" },
+          { "title": "Kafka for Small Teams", "entity": "when-kafka-is-overkill" },
+          { "title": "Redpanda" },
+          { "title": "Pulsar" },
+          { "title": "Kinesis" }
+        ]
+      },
+      {
+        "id": "eda",
+        "title": "Event Driven Architecture",
+        "topics": [
+          { "title": "EDA Principles", "entity": "event-driven-architecture" },
+          { "title": "Event Sourcing", "entity": "event-sourcing" },
+          { "title": "Event Choreography" },
+          { "title": "Event Orchestration" },
+          { "title": "Transaction Boundaries" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "security",
+    "number": 8,
+    "title": "Security Architecture",
+    "purpose": "Design identity, access, network isolation and secrets handling as architecture, not afterthoughts.",
+    "whyItMatters": "Security decisions define trust boundaries. Getting them wrong rarely shows up until an incident, and fixing them later touches every service.",
+    "subcategories": [
+      {
+        "id": "identity",
+        "title": "Identity",
+        "topics": [
+          { "title": "OAuth vs SAML", "entity": "oauth-vs-saml" },
+          { "title": "Managed Identity vs Custom Identity", "entity": "managed-vs-custom-identity" },
+          { "title": "OpenID Connect" },
+          { "title": "LDAP" }
+        ]
+      },
+      {
+        "id": "authentication",
+        "title": "Authentication",
+        "topics": [{ "title": "Session Authentication" }, { "title": "JWT" }, { "title": "Token-Based Systems" }]
+      },
+      {
+        "id": "authorization",
+        "title": "Authorization",
+        "topics": [{ "title": "RBAC" }, { "title": "ABAC" }, { "title": "Policy-Based Access" }]
+      },
+      {
+        "id": "network-security",
+        "title": "Network Security",
+        "topics": [
+          { "title": "Zero Trust", "entity": "zero-trust" },
+          { "title": "WAF", "entity": "cloudflare-edge-platform" },
+          { "title": "Microsegmentation" },
+          { "title": "Bastion Hosts" }
+        ]
+      },
+      {
+        "id": "secrets",
+        "title": "Secrets Management",
+        "topics": [
+          { "title": "Secrets Management", "entity": "secrets-management" },
+          { "title": "HashiCorp Vault", "entity": "hashicorp-vault" },
+          { "title": "AWS Secrets Manager" },
+          { "title": "Azure Key Vault" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "reliability",
+    "number": 9,
+    "title": "Reliability Engineering",
+    "purpose": "Treat availability and recovery as business properties with explicit targets and costs.",
+    "whyItMatters": "Every additional nine costs more than the last. Reliability work pays off only when targets match what the business actually loses during downtime.",
+    "subcategories": [
+      {
+        "id": "availability",
+        "title": "Availability",
+        "topics": [
+          { "title": "Reliability Engineering", "entity": "reliability-engineering" },
+          { "title": "Does Your Business Need Five Nines?", "entity": "does-your-business-need-five-nines" },
+          { "title": "Circuit Breakers", "entity": "circuit-breaker" },
+          { "title": "Retries with Backoff", "entity": "retries-with-backoff" }
+        ]
+      },
+      {
+        "id": "disaster-recovery",
+        "title": "Disaster Recovery",
+        "topics": [
+          { "title": "RTO and RPO", "entity": "rto-and-rpo" },
+          { "title": "Active Active vs Active Passive", "entity": "active-active-vs-active-passive" },
+          { "title": "Backups" },
+          { "title": "Failover" },
+          { "title": "Pilot Light" },
+          { "title": "Warm Standby" }
+        ]
+      },
+      {
+        "id": "chaos-engineering",
+        "title": "Chaos Engineering",
+        "topics": [
+          { "title": "Chaos Engineering", "entity": "chaos-engineering" },
+          { "title": "Fault Injection" },
+          { "title": "Game Days" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "observability",
+    "number": 10,
+    "title": "Observability",
+    "purpose": "Make system behaviour understandable through metrics, logs and traces.",
+    "whyItMatters": "Distributed systems fail in ways you cannot predict. Observability decides how long it takes to find out what happened.",
+    "subcategories": [
+      {
+        "id": "monitoring",
+        "title": "Monitoring",
+        "topics": [
+          { "title": "Observability", "entity": "observability" },
+          { "title": "Prometheus", "entity": "prometheus" },
+          { "title": "Datadog", "entity": "datadog" },
+          { "title": "Prometheus vs Datadog", "entity": "prometheus-vs-datadog" },
+          { "title": "Grafana" },
+          { "title": "New Relic" },
+          { "title": "Grafana vs Kibana" }
+        ]
+      },
+      {
+        "id": "logging",
+        "title": "Logging",
+        "topics": [
+          { "title": "Metrics vs Logs vs Traces", "entity": "metrics-vs-logs-vs-traces" },
+          { "title": "Elastic Stack" },
+          { "title": "OpenSearch" },
+          { "title": "Splunk" }
+        ]
+      },
+      {
+        "id": "tracing",
+        "title": "Tracing",
+        "topics": [
+          { "title": "Distributed Tracing", "entity": "distributed-tracing" },
+          { "title": "OpenTelemetry", "entity": "opentelemetry" },
+          { "title": "Jaeger", "entity": "jaeger" },
+          { "title": "Tempo" }
+        ]
+      },
+      {
+        "id": "sre",
+        "title": "SRE Practices",
+        "topics": [{ "title": "SLIs, SLOs and Error Budgets", "entity": "slos-and-error-budgets" }, { "title": "SLA" }]
+      }
+    ]
+  },
+  {
+    "id": "platform-engineering",
+    "number": 11,
+    "title": "Platform Engineering",
+    "purpose": "Design internal platforms that reduce cognitive load without becoming a bottleneck.",
+    "whyItMatters": "A platform is a product for engineers. Done well it standardizes deployment and security; done badly it becomes a ticket queue.",
+    "subcategories": [
+      {
+        "id": "idp",
+        "title": "Internal Developer Platforms",
+        "topics": [
+          { "title": "Should You Build an IDP?", "entity": "should-you-build-an-internal-developer-platform" },
+          { "title": "Backstage", "entity": "backstage" },
+          { "title": "Humanitec" },
+          { "title": "Port" }
+        ]
+      },
+      {
+        "id": "golden-paths",
+        "title": "Golden Paths",
+        "topics": [
+          { "title": "Golden Paths", "entity": "golden-paths" },
+          { "title": "Developer Templates" },
+          { "title": "Deployment Standards" },
+          { "title": "Security Baselines" }
+        ]
+      },
+      {
+        "id": "developer-experience",
+        "title": "Developer Experience",
+        "topics": [{ "title": "Build Time" }, { "title": "Deployment Time" }, { "title": "Cognitive Load" }]
+      }
+    ]
+  },
+  {
+    "id": "performance",
+    "number": 12,
+    "title": "Performance Engineering",
+    "purpose": "Improve latency and throughput while keeping cost and complexity visible.",
+    "whyItMatters": "Every performance technique trades something: freshness for caching, consistency for replicas, simplicity for sharding.",
+    "subcategories": [
+      {
+        "id": "application-performance",
+        "title": "Application Performance",
+        "topics": [
+          { "title": "Caching", "entity": "caching" },
+          { "title": "Compression" },
+          { "title": "Connection Reuse" },
+          { "title": "Query Optimization" }
+        ]
+      },
+      {
+        "id": "network-performance",
+        "title": "Network Performance",
+        "topics": [
+          { "title": "CDN Optimization", "entity": "cdn-vs-no-cdn" },
+          { "title": "TCP Optimization" },
+          { "title": "TLS Optimization" }
+        ]
+      },
+      {
+        "id": "scaling-patterns",
+        "title": "Scaling Patterns",
+        "topics": [
+          { "title": "Queue Buffering", "entity": "queue-buffering" },
+          { "title": "Read Replicas", "entity": "read-replicas" },
+          { "title": "Sharding", "entity": "sharding" },
+          { "title": "Caching Layers", "entity": "caching" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cost",
+    "number": 13,
+    "title": "Cost Optimization",
+    "priority": "Extremely valuable",
+    "purpose": "Treat cloud cost as an ongoing architectural discipline.",
+    "whyItMatters": "Cost is a design property. Unit economics show whether growth makes the business healthier or just makes the bill bigger.",
+    "subcategories": [
+      {
+        "id": "finops",
+        "title": "FinOps",
+        "topics": [
+          { "title": "Unit Economics", "entity": "unit-economics" },
+          { "title": "Cloud Spend Analysis" },
+          { "title": "Chargebacks" },
+          { "title": "Showbacks" }
+        ]
+      },
+      {
+        "id": "optimization-guides",
+        "title": "Optimization Guides",
+        "topics": [
+          { "title": "CDN Offloading", "entity": "cdn-vs-no-cdn" },
+          { "title": "Reserved Instances" },
+          { "title": "Spot Instances" },
+          { "title": "Storage Tiering" }
+        ]
+      },
+      {
+        "id": "decision-trees",
+        "title": "Decision Trees",
+        "topics": [
+          { "title": "Managed Services vs Self Managed", "entity": "managed-services-vs-self-managed" },
+          { "title": "Reduce Cost vs Improve Performance", "entity": "cost-vs-performance" },
+          { "title": "Storage Cost Reduction Strategies", "entity": "s3-vs-r2" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ai-infrastructure",
+    "number": 14,
+    "title": "AI Infrastructure",
+    "purpose": "Make model hosting, retrieval and inference decisions as architecture decisions.",
+    "whyItMatters": "Inference economics, latency and data governance behave differently from ordinary web workloads and change quickly.",
+    "subcategories": [
+      {
+        "id": "llm-platforms",
+        "title": "LLM Platforms",
+        "topics": [{ "title": "OpenAI" }, { "title": "Anthropic" }, { "title": "Azure OpenAI" }, { "title": "Google Gemini" }]
+      },
+      {
+        "id": "inference",
+        "title": "Inference Infrastructure",
+        "topics": [{ "title": "GPUs" }, { "title": "TPUs" }, { "title": "Inference Gateways" }]
+      },
+      {
+        "id": "vector-databases",
+        "title": "Vector Databases",
+        "topics": [{ "title": "Vector Databases", "entity": "vector-databases" }]
+      },
+      {
+        "id": "ai-decisions",
+        "title": "Decision Topics",
+        "topics": [
+          { "title": "RAG vs Fine Tuning", "entity": "rag-vs-fine-tuning" },
+          { "title": "Hosted Models vs Self Hosted", "entity": "hosted-vs-self-hosted-models" },
+          { "title": "Vector DB Selection", "entity": "vector-databases" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "failure-patterns",
+    "number": 15,
+    "title": "Failure Pattern Library",
+    "priority": "High",
+    "purpose": "Learn how architectures fail before you experience it in production.",
+    "whyItMatters": "Failure patterns repeat across companies. Each entry links back to the decisions that create or amplify it.",
+    "subcategories": [
+      {
+        "id": "architectural",
+        "title": "Architectural Failures",
+        "topics": [
+          { "title": "Premature Microservices", "entity": "premature-microservices" },
+          { "title": "Premature Kubernetes", "entity": "premature-kubernetes" },
+          { "title": "Over-Sharding", "entity": "over-sharding" },
+          { "title": "Over-Abstraction", "entity": "over-abstraction" }
+        ]
+      },
+      {
+        "id": "reliability-failures",
+        "title": "Reliability Failures",
+        "topics": [
+          { "title": "Single Point of Failure", "entity": "single-point-of-failure" },
+          { "title": "Cascade Failures", "entity": "cascade-failures" },
+          { "title": "Retry Storms", "entity": "retry-storms" },
+          { "title": "Thundering Herd", "entity": "thundering-herd" }
+        ]
+      },
+      {
+        "id": "security-failures",
+        "title": "Security Failures",
+        "topics": [
+          { "title": "Secret Sprawl", "entity": "secret-sprawl" },
+          { "title": "Exposed Buckets", "entity": "exposed-buckets" },
+          { "title": "Credential Reuse" }
+        ]
+      },
+      {
+        "id": "organizational-failures",
+        "title": "Organizational Failures",
+        "topics": [
+          { "title": "Ownership Confusion", "entity": "ownership-confusion" },
+          { "title": "Platform Team Bottlenecks", "entity": "platform-team-bottleneck" },
+          { "title": "Knowledge Silos", "entity": "knowledge-silos" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "architecture-reviews",
+    "number": 16,
+    "title": "Architecture Reviews",
+    "purpose": "Deterministic assessment frameworks matched to organizational stage.",
+    "whyItMatters": "The right architecture for five engineers is the wrong one for five hundred. Reviews ask the questions that matter at each stage.",
+    "subcategories": [
+      {
+        "id": "reviews",
+        "title": "Reviews by Stage",
+        "topics": [
+          { "title": "Startup Review (0–10 engineers, 0–100K users)", "entity": "startup-architecture-review" },
+          { "title": "Growth Company Review (10–100 engineers, 100K–10M users)", "entity": "growth-architecture-review" },
+          { "title": "Enterprise Review (100+ engineers, global systems)", "entity": "enterprise-architecture-review" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "decision-frameworks",
+    "number": 17,
+    "title": "Decision Frameworks",
+    "purpose": "The reasoning engine: tools for evaluating choices under uncertainty.",
+    "whyItMatters": "Frameworks make assumptions explicit, so decisions can be reviewed and revisited instead of relitigated.",
+    "subcategories": [
+      {
+        "id": "framework-library",
+        "title": "Framework Library",
+        "topics": [
+          { "title": "First Principles Thinking", "entity": "first-principles-thinking" },
+          { "title": "Systems Thinking", "entity": "systems-thinking" },
+          { "title": "Risk Matrix", "entity": "risk-matrix" },
+          { "title": "Cost-Benefit Analysis", "entity": "cost-benefit-analysis" },
+          { "title": "Architecture Fitness Functions", "entity": "architecture-fitness-functions" },
+          { "title": "OODA Loop" },
+          { "title": "Wardley Mapping" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "case-studies",
+    "number": 18,
+    "title": "Case Study Library",
+    "purpose": "Structured analysis of public real-world systems, linked to the decisions they illustrate.",
+    "whyItMatters": "Case studies show how decisions play out at scale. Each one separates what is publicly documented from Atlas interpretation.",
+    "subcategories": [
+      {
+        "id": "companies",
+        "title": "Companies",
+        "topics": [
+          { "title": "Cloudflare: Anycast, CDN, WAF, Workers", "entity": "cloudflare-edge-platform" },
+          { "title": "GitHub: Monolith Evolution", "entity": "github-monolith-evolution" },
+          { "title": "Netflix: Chaos Engineering", "entity": "netflix-chaos-engineering" },
+          { "title": "Amazon: Service Oriented Architecture", "entity": "amazon-service-oriented-architecture" },
+          { "title": "Stripe: Payments Reliability and API Design" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "knowledge-graph",
+    "number": 19,
+    "title": "Knowledge Graph",
+    "priority": "Highest strategic importance",
+    "purpose": "Every decision is interconnected. The graph links problems, decisions, technologies, patterns and failures.",
+    "whyItMatters": "The relationships are the product. They let you move from a problem to the decisions it implies and the failures those decisions risk.",
+    "subcategories": [
+      {
+        "id": "relationship-families",
+        "title": "Relationship Families",
+        "topics": [
+          { "title": "Decision: requires, enables, depends on, alternative to, leads to, influences, evaluates" },
+          { "title": "Technology: implements, provides, integrates with, competes with, replaces" },
+          { "title": "Operational: introduces risk, mitigates, improves, degrades, requires capability" },
+          { "title": "Failure: can cause, contributes to, amplifies, prevents, recovers from" },
+          { "title": "Learning: prerequisite for, related to, deepens, example of" }
+        ]
+      }
+    ]
+  }
+]

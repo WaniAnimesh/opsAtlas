@@ -1,0 +1,101 @@
+[
+  {
+    "id": "scale-my-system",
+    "title": "I need to scale my system",
+    "summary": "From a vague scaling problem to the topology, platform, traffic and observability decisions that follow if you split into services.",
+    "steps": [
+      { "entity": "scaling-fundamentals", "why": "Start by naming the kind of scaling you need: traffic, data or team. The answer decides whether a topology change helps at all." },
+      { "entity": "monolith-vs-microservices", "why": "If the bottleneck is team coordination rather than one saturated resource, the topology question comes up." },
+      { "entity": "microservices", "why": "A move to microservices introduces service-to-service communication concerns: every function call becomes a network call." },
+      { "entity": "service-discovery", "why": "Service-to-service communication introduces service discovery requirements, because instances come and go as services scale and redeploy." },
+      { "entity": "kubernetes", "why": "Kubernetes provides orchestration and service discovery within its ecosystem, which is why many teams evaluate it at this point." },
+      { "entity": "ingress", "why": "External traffic entering a Kubernetes environment introduces ingress and routing considerations." },
+      { "entity": "api-gateway", "why": "API gateways add API management and traffic control (authentication, rate limits, versioning) on top of routing." },
+      { "entity": "observability", "why": "Distributed systems increase the importance of observability: a single request now crosses many processes." },
+      { "entity": "opentelemetry", "why": "OpenTelemetry is the vendor-neutral way to produce the metrics, logs and traces observability depends on." },
+      { "entity": "distributed-tracing", "why": "Distributed tracing helps engineers understand request flows across services and find where latency comes from." },
+      { "entity": "reliability-engineering", "why": "Reliability engineering provides the principles and practices needed to manage the resulting system." }
+    ]
+  },
+  {
+    "id": "reduce-cloud-costs",
+    "title": "My infrastructure costs are increasing",
+    "summary": "Turn a rising bill into unit costs, then decide where managed services, compute models and offloading help.",
+    "steps": [
+      { "entity": "cost-vs-performance", "why": "First decide what level of performance you are paying for and whether it is worth it." },
+      { "entity": "unit-economics", "why": "A rising bill is only a problem if cost per customer or per request is rising. Measure that." },
+      { "entity": "managed-services-vs-self-managed", "why": "Compare managed premiums with the staff time self-managed components really cost." },
+      { "entity": "containers-vs-serverless", "why": "Idle capacity is a common waste; the compute model decides whether you pay for it." },
+      { "entity": "cdn-vs-no-cdn", "why": "Offloading traffic to a CDN often lowers both latency and origin cost." },
+      { "entity": "s3-vs-r2", "why": "Egress-heavy storage is a frequent hidden cost driver." }
+    ]
+  },
+  {
+    "id": "database-bottleneck",
+    "title": "My database is becoming a bottleneck",
+    "summary": "The usual order of database scaling levers, from cheapest to hardest to undo.",
+    "steps": [
+      { "entity": "caching", "why": "Removing repeated reads is usually the cheapest way to reduce database load." },
+      { "entity": "read-replicas", "why": "If reads still dominate, replicas add read capacity with SQL semantics, at the cost of replication lag." },
+      { "entity": "consistency-models", "why": "Replicas and caches are eventually consistent; decide which reads must hit the primary." },
+      { "entity": "single-primary-vs-multi-primary", "why": "If writes are the bottleneck, understand why multi-primary is rarely the answer." },
+      { "entity": "sharding", "why": "When one primary cannot take the write load, partitioning is the next step." },
+      { "entity": "over-sharding", "why": "Know how sharding goes wrong before choosing a shard key." },
+      { "entity": "sql-vs-nosql", "why": "For known access patterns at extreme scale, a horizontally scalable database may fit better than sharding." }
+    ]
+  },
+  {
+    "id": "reliability-issues",
+    "title": "My system has reliability issues",
+    "summary": "Set a target, find single points of failure, contain cascades, then plan recovery and verify it.",
+    "steps": [
+      { "entity": "does-your-business-need-five-nines", "why": "Agree what availability the business needs before spending on it." },
+      { "entity": "slos-and-error-budgets", "why": "Express the target as SLOs so you can tell when you are missing it." },
+      { "entity": "single-point-of-failure", "why": "Find the components, dependencies and people whose failure alone causes an outage." },
+      { "entity": "cascade-failures", "why": "Most large outages are small faults that spread; understand how." },
+      { "entity": "retries-with-backoff", "why": "Retries hide transient faults but must be bounded to avoid amplifying load." },
+      { "entity": "circuit-breaker", "why": "Fail fast on dependencies that are already failing, so callers survive." },
+      { "entity": "active-active-vs-active-passive", "why": "For site-level failures, choose a multi-site strategy that matches your recovery objectives." },
+      { "entity": "chaos-engineering", "why": "Verify the design by injecting failures deliberately." }
+    ]
+  },
+  {
+    "id": "deployment-complexity",
+    "title": "My deployment process is becoming complicated",
+    "summary": "Decide the compute model and orchestration level, avoid premature Kubernetes, then pave the path for teams.",
+    "steps": [
+      { "entity": "containers-vs-serverless", "why": "Start with the packaging and compute model; it sets everything else." },
+      { "entity": "should-you-adopt-kubernetes", "why": "With containers, decide whether you need a general orchestrator." },
+      { "entity": "premature-kubernetes", "why": "Recognize the signs that Kubernetes would cost more than it saves." },
+      { "entity": "kubernetes-vs-ecs", "why": "On AWS, compare against a simpler managed orchestrator." },
+      { "entity": "should-you-build-an-internal-developer-platform", "why": "When many teams repeat the same deployment work, a platform may pay off." },
+      { "entity": "golden-paths", "why": "Make the right deployment path the easiest one." }
+    ]
+  },
+  {
+    "id": "service-ownership",
+    "title": "My engineering team is struggling with service ownership",
+    "summary": "Connect team structure to system structure and fix ownership before splitting further.",
+    "steps": [
+      { "entity": "conways-law", "why": "System boundaries tend to mirror team boundaries; start there." },
+      { "entity": "ownership-confusion", "why": "Recognize the symptoms of components without owners." },
+      { "entity": "platform-team-vs-embedded-teams", "why": "Decide where infrastructure responsibility lives." },
+      { "entity": "platform-team-bottleneck", "why": "Avoid replacing unclear ownership with a central queue." },
+      { "entity": "modular-monolith-vs-microservices", "why": "Ownership boundaries do not always need deployment boundaries." }
+    ]
+  },
+  {
+    "id": "async-communication",
+    "title": "How should I handle asynchronous communication?",
+    "summary": "From sync vs async to brokers, failure handling and whether Kafka is warranted.",
+    "steps": [
+      { "entity": "sync-vs-async", "why": "Decide which interactions can complete later." },
+      { "entity": "queue-buffering", "why": "The simplest async pattern: absorb bursts with a queue." },
+      { "entity": "event-driven-architecture", "why": "When many consumers react to the same facts, events replace point-to-point calls." },
+      { "entity": "dead-letter-queues", "why": "Every async flow needs somewhere for failing messages to go." },
+      { "entity": "should-you-use-kafka", "why": "Decide whether replay and fan-out justify a streaming platform." },
+      { "entity": "when-kafka-is-overkill", "why": "Check the signs that a simpler queue is enough." },
+      { "entity": "rabbitmq-vs-kafka", "why": "Compare broker models directly." }
+    ]
+  }
+]

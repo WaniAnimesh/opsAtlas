@@ -120,4 +120,62 @@ if (rubricFiles.length === 0) {
   validateFiles(rubricFiles, validateRubric);
 }
 
+// ---------------------------------------------------------------------------
+// Decision Atlas: schema validation, then cross-file referential integrity
+// (broken relations, orphans, per-type content contracts).
+// ---------------------------------------------------------------------------
+const atlasDir = path.join(root, 'content', 'atlas');
+if (!fs.existsSync(atlasDir)) {
+  console.log('(no content/atlas directory -- skipping Decision Atlas validation)');
+} else {
+  const validateAtlasEntities = ajv.compile(
+    readJson(path.join(schemaDir, 'atlas-entity.schema.json')) as object,
+  );
+  const validateAtlasLayers = ajv.compile(
+    readJson(path.join(schemaDir, 'atlas-layers.schema.json')) as object,
+  );
+  const validateAtlasJourneys = ajv.compile(
+    readJson(path.join(schemaDir, 'atlas-journeys.schema.json')) as object,
+  );
+  const entityFiles = listJsonFiles(path.join(atlasDir, 'entities'));
+  const errorsBefore = hasError;
+  hasError = false;
+  validateFiles([path.join(atlasDir, 'layers.json')], validateAtlasLayers);
+  validateFiles([path.join(atlasDir, 'journeys.json')], validateAtlasJourneys);
+  validateFiles(entityFiles, validateAtlasEntities);
+  const schemaOk = !hasError;
+  hasError = errorsBefore || hasError;
+
+  if (schemaOk) {
+    // Loaded lazily so a schema failure reports cleanly first.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { validateAtlas } = require('../src/frontend/lib/atlas/validate') as typeof import('../src/frontend/lib/atlas/validate');
+    const content = {
+      layers: readJson(path.join(atlasDir, 'layers.json')),
+      journeys: readJson(path.join(atlasDir, 'journeys.json')),
+      entities: entityFiles.flatMap((f) => readJson(f) as unknown[]),
+    } as Parameters<typeof validateAtlas>[0];
+    const incidentSlugs = new Set(
+      incidentFiles
+        .map((f) => (readJson(f) as { slug?: unknown }).slug)
+        .filter((s): s is string => typeof s === 'string'),
+    );
+    const integrity = validateAtlas(content, incidentSlugs);
+    if (integrity.length === 0) {
+      console.log(
+        '\u2713 content/atlas: ' +
+          content.entities.length +
+          ' entities, ' +
+          content.entities.reduce((n, e) => n + e.relations.length, 0) +
+          ' relations, ' +
+          content.journeys.length +
+          ' journeys -- integrity OK',
+      );
+    } else {
+      for (const msg of integrity) console.error('\u2717 content/atlas: ' + msg);
+      hasError = true;
+    }
+  }
+}
+
 process.exit(hasError ? 1 : 0);

@@ -1,0 +1,264 @@
+[
+  {
+    "id": "should-you-build-an-internal-developer-platform",
+    "title": "Should You Build an Internal Developer Platform?",
+    "type": "decision",
+    "layer": "platform-engineering",
+    "subcategory": "idp",
+    "description": "When an internal platform with self-service golden paths pays for itself, and when it becomes overhead.",
+    "question": "Should we invest in an internal developer platform?",
+    "tags": ["internal developer platform", "idp", "platform engineering", "backstage", "self-service", "golden paths"],
+    "aliases": ["IDP", "should we invest in platform engineering"],
+    "problems": ["should we invest in platform engineering", "my deployment process is becoming complicated", "every team builds its own pipeline"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "An internal developer platform gives product teams self-service access to environments, deployments, observability and security baselines through paved paths, a portal or APIs, so they do not have to assemble infrastructure themselves.",
+      "context": "Platforms reduce cognitive load and standardize practices once many teams repeat the same infrastructure work. They are products: they need users, a roadmap and adoption metrics.",
+      "whenToUse": ["Several product teams duplicate pipelines, infrastructure code and on-call tooling.", "Onboarding a new service takes days or weeks.", "Security and compliance baselines are inconsistent across teams."],
+      "whenNotToUse": ["One or two teams; conventions and a shared template repo suffice.", "No dedicated owners; an unmaintained portal is worse than none.", "When the plan is to build a portal before solving a concrete developer pain."],
+      "alternatives": ["Shared templates and documentation.", "Buy a PaaS.", "Adopt a commercial platform product."],
+      "organization": "Run the platform team as a product team. Measure lead time, deployment frequency, onboarding time and adoption.",
+      "failureModes": ["Platform team bottleneck.", "Over-abstraction that hides needed controls.", "Low adoption because golden paths are mandatory but poor."],
+      "summary": "Build a platform when duplicated infrastructure work across teams is clearly costing more than a platform team would; start with the most painful path, not a portal."
+    },
+    "tradeoffs": {
+      "options": ["Build an IDP", "Templates and conventions"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Dedicated platform team", "Little extra cost"] },
+        { "dimension": "Developer Experience", "values": ["Self-service, lower cognitive load", "Teams assemble pieces themselves"] },
+        { "dimension": "Security", "values": ["Baselines enforced by default", "Depends on each team"] },
+        { "dimension": "Organizational Fit", "values": ["Many teams", "Few teams"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Build an IDP", "chooseWhen": ["Many teams with duplicated infra work", "Slow onboarding"] },
+      { "option": "Templates and conventions", "chooseWhen": ["Few teams", "No platform owners"] }
+    ],
+    "relations": [
+      { "type": "requires", "target": "golden-paths", "note": "The core deliverable of a platform." },
+      { "type": "evaluates", "target": "backstage", "note": "A common portal framework." },
+      { "type": "can-cause", "target": "platform-team-bottleneck", "note": "Platforms that gate instead of enable." },
+      { "type": "introduces-risk", "target": "over-abstraction", "note": "Hiding too much behind the platform." }
+    ]
+  },
+  {
+    "id": "golden-paths",
+    "title": "Golden Paths",
+    "type": "pattern",
+    "layer": "platform-engineering",
+    "subcategory": "golden-paths",
+    "description": "Opinionated, supported routes for common tasks (new service, deployment, observability) that bake in good defaults.",
+    "tags": ["golden paths", "paved road", "templates", "platform engineering", "security baselines"],
+    "aliases": ["paved road", "developer templates", "deployment standards"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A golden path is a well-supported way to do a common task: a service template with CI/CD, observability, security scanning and runbooks already wired in. Teams may leave the path, but then they own the difference.",
+      "whenToUse": ["Recurring tasks across teams: new services, data stores, deployments."],
+      "whenNotToUse": ["Making the path mandatory before it is good."],
+      "implementation": ["Start from the most common, most painful task.", "Keep templates updatable, not just copy-once.", "Measure time from idea to first production deploy."],
+      "summary": "Make the right way the easy way."
+    },
+    "relations": [
+      { "type": "prevents", "target": "premature-kubernetes", "note": "A paved path hides cluster complexity from product teams." },
+      { "type": "mitigates", "target": "secret-sprawl", "note": "Templates wire in proper secrets handling by default." }
+    ]
+  },
+  {
+    "id": "backstage",
+    "title": "Backstage",
+    "type": "technology",
+    "layer": "platform-engineering",
+    "subcategory": "idp",
+    "description": "An open-source framework for building developer portals with a software catalog, templates and plugins.",
+    "tags": ["backstage", "developer portal", "software catalog", "cncf", "spotify"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Backstage?", "url": "https://backstage.io/docs/overview/what-is-backstage", "publisher": "backstage.io" }],
+    "sections": {
+      "overview": "Backstage provides a software catalog (who owns what), software templates for scaffolding, TechDocs and a plugin ecosystem.",
+      "whenToUse": ["Centralizing service ownership and documentation.", "Scaffolding new services from templates."],
+      "whenNotToUse": ["It is a framework to build on, not a finished product; it needs engineering investment."],
+      "summary": "A portal framework that needs an owning team."
+    },
+    "relations": [
+      { "type": "mitigates", "target": "ownership-confusion", "note": "The catalog records an owner for every component." },
+      { "type": "implements", "target": "golden-paths", "note": "Software templates encode golden paths." }
+    ]
+  },
+  {
+    "id": "managed-services-vs-self-managed",
+    "title": "Managed Services vs Self-Managed",
+    "type": "decision",
+    "layer": "cost",
+    "subcategory": "decision-trees",
+    "secondaryLayers": ["architecture-decisions"],
+    "description": "Whether to pay a provider to operate a component (database, queue, cluster) or run it yourself.",
+    "question": "Should we pay for a managed service or run it ourselves?",
+    "tags": ["managed services", "self-managed", "cost", "operations", "tco", "rds", "msk"],
+    "aliases": ["managed vs self-hosted"],
+    "problems": ["my infrastructure costs are increasing", "how can I reduce cloud costs", "we spend too much time on operations"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Managed services bundle infrastructure with operations: provisioning, patching, backups, failover and scaling. Self-managed means you run the same software on your own instances.",
+      "context": "The sticker price of managed services is higher than raw compute. The comparison must include engineering time, on-call burden, incident risk and opportunity cost.",
+      "whenToUse": ["Managed: small and medium teams, commodity components, when engineering time is the constraint.", "Self-managed: very large scale where premiums are large in absolute terms, special configuration needs, or environments where managed options do not exist."],
+      "whenNotToUse": ["Self-managed to save money without counting staff time.", "Managed when vendor limits block a core requirement."],
+      "cost": "Total cost = infrastructure + people + risk. At small scale people dominate; at very large scale infrastructure premiums can justify a dedicated team.",
+      "failureModes": ["Self-managed components known by one person.", "Untested backups on self-managed databases."],
+      "summary": "Default to managed; self-manage only when the savings pay for a team that runs it well."
+    },
+    "tradeoffs": {
+      "options": ["Managed service", "Self-managed"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Premium on infrastructure", "Cheaper infra; staff and risk cost"] },
+        { "dimension": "Reliability", "values": ["Provider-run backups and failover", "Depends on your practice"] },
+        { "dimension": "Operations", "values": ["Configuration and monitoring", "Everything"] },
+        { "dimension": "Flexibility", "values": ["Provider limits and versions", "Full control"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Managed service", "chooseWhen": ["Engineering time is scarce", "Commodity component"] },
+      { "option": "Self-managed", "chooseWhen": ["Very large scale", "Unmet requirements", "Dedicated operators"] }
+    ],
+    "relations": [
+      { "type": "mitigates", "target": "knowledge-silos", "note": "Fewer components that only one person can operate." },
+      { "type": "related-to", "target": "unit-economics", "note": "Compare options on cost per unit of business value." },
+      { "type": "related-to", "target": "cost-benefit-analysis", "note": "Total cost of ownership comparison." }
+    ]
+  },
+  {
+    "id": "unit-economics",
+    "title": "Unit Economics for Cloud Cost",
+    "type": "concept",
+    "layer": "cost",
+    "subcategory": "finops",
+    "description": "Measuring infrastructure cost per unit of business value (per customer, order, request) instead of total spend.",
+    "tags": ["unit economics", "finops", "cost per customer", "cloud cost", "cost allocation", "showback", "chargeback"],
+    "aliases": ["FinOps", "cost allocation"],
+    "problems": ["my infrastructure costs are increasing", "how can I reduce cloud costs"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "FinOps Framework", "url": "https://www.finops.org/framework/", "publisher": "FinOps Foundation" }],
+    "sections": {
+      "overview": "Total cloud spend rising is not necessarily bad; cost per unit rising is. Unit economics divides cost by a business driver to show whether the architecture becomes more or less efficient as it grows.",
+      "application": ["Tag resources by service and owner to allocate cost.", "Choose a unit (active customer, transaction, GB processed).", "Track cost per unit over time and review it with architecture changes.", "Use showback to make teams aware of their spend, chargeback to make them accountable."],
+      "examples": ["CDN offloading reduces cost per page view.", "Right-sizing and autoscaling reduce cost per request at off-peak times."],
+      "limitations": "Shared costs (networking, platform) need an agreed allocation model.",
+      "summary": "Manage cost per unit, not just the bill."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "managed-services-vs-self-managed", "note": "Unit cost is the right lens for that comparison." }
+    ]
+  },
+  {
+    "id": "rag-vs-fine-tuning",
+    "title": "RAG vs Fine-Tuning",
+    "type": "decision",
+    "layer": "ai-infrastructure",
+    "subcategory": "ai-decisions",
+    "description": "Whether to supply a model with retrieved context at query time or adapt the model's weights to your data.",
+    "question": "Should we use retrieval-augmented generation or fine-tune a model?",
+    "tags": ["rag", "fine tuning", "llm", "retrieval", "embeddings", "vector database"],
+    "aliases": ["retrieval augmented generation"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Retrieval-augmented generation (RAG) retrieves relevant documents and puts them in the prompt. Fine-tuning trains a model further on examples to change its behaviour, style or task performance.",
+      "context": "RAG addresses knowledge: what the model should know, kept fresh and attributable. Fine-tuning addresses behaviour: format, tone, task specialization. Many systems use both.",
+      "whenToUse": ["RAG: knowledge changes often, answers must cite sources, access control must apply per document.", "Fine-tuning: consistent output format or domain behaviour that prompting cannot achieve, or reducing prompt size and latency at scale."],
+      "whenNotToUse": ["Fine-tuning to inject frequently changing facts.", "RAG when the retrieval corpus has no owner and goes stale."],
+      "operations": "RAG adds an ingestion pipeline, embeddings, an index and retrieval quality evaluation. Fine-tuning adds training data curation, evaluation and model versioning.",
+      "failureModes": ["Stale or unowned retrieval corpus giving confident wrong answers.", "Retrieval ignoring document permissions and leaking data."],
+      "summary": "Start with RAG for knowledge; fine-tune for behaviour when evaluation shows prompting is not enough."
+    },
+    "tradeoffs": {
+      "options": ["RAG", "Fine-tuning"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Index and longer prompts", "Training and evaluation runs"] },
+        { "dimension": "Flexibility", "values": ["Update data without retraining", "Retrain to update"] },
+        { "dimension": "Security", "values": ["Per-document access control possible", "Training data is baked into weights"] },
+        { "dimension": "Operations", "values": ["Ingestion and retrieval quality", "Model versioning and evaluation"] }
+      ]
+    },
+    "guidance": [
+      { "option": "RAG", "chooseWhen": ["Changing knowledge", "Citations", "Access control"] },
+      { "option": "Fine-tuning", "chooseWhen": ["Behaviour and format", "Latency or prompt-size reduction"] }
+    ],
+    "relations": [
+      { "type": "requires", "target": "vector-databases", "note": "RAG usually needs vector search." },
+      { "type": "introduces-risk", "target": "ownership-confusion", "note": "Retrieval corpora need an owner for freshness and permissions." },
+      { "type": "related-to", "target": "hosted-vs-self-hosted-models", "note": "Fine-tuning options depend on where models run." }
+    ]
+  },
+  {
+    "id": "hosted-vs-self-hosted-models",
+    "title": "Hosted Models vs Self-Hosted Models",
+    "type": "decision",
+    "layer": "ai-infrastructure",
+    "subcategory": "ai-decisions",
+    "description": "Whether to call a provider's model API or run open-weight models on your own GPUs.",
+    "question": "Should we use a hosted model API or run models ourselves?",
+    "tags": ["llm", "hosted models", "self-hosted", "gpu", "inference", "openai", "anthropic", "open weights"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Hosted model APIs provide strong models with no infrastructure, billed per token. Self-hosting runs open-weight models on your own or rented GPUs, giving control over data, latency and cost at high utilization.",
+      "whenToUse": ["Hosted: most teams, variable load, access to frontier models.", "Self-hosted: strict data residency, very high steady volume, need for custom models, or offline environments."],
+      "whenNotToUse": ["Self-hosting with low or bursty utilization; idle GPUs are expensive.", "Hosted APIs when contractual or regulatory terms prohibit sending the data."],
+      "cost": "Hosted cost scales with tokens. Self-hosted cost is dominated by GPU capacity and the people to run inference infrastructure; it only wins at high utilization.",
+      "failureModes": ["A single model provider as a single point of failure for the product.", "GPU capacity shortages blocking scale-up."],
+      "summary": "Start hosted; self-host when data, volume or control requirements make the economics work."
+    },
+    "tradeoffs": {
+      "options": ["Hosted API", "Self-hosted"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Per token; no idle cost", "GPU capacity; cheap only at high utilization"] },
+        { "dimension": "Performance", "values": ["Provider latency and rate limits", "Tunable latency"] },
+        { "dimension": "Security", "values": ["Data leaves your boundary under contract", "Data stays in your environment"] },
+        { "dimension": "Operations", "values": ["Minimal", "Inference serving, scaling, upgrades"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Hosted API", "chooseWhen": ["Most products", "Variable load"] },
+      { "option": "Self-hosted", "chooseWhen": ["Strict data control", "High steady volume"] }
+    ],
+    "relations": [
+      { "type": "introduces-risk", "target": "single-point-of-failure", "note": "Depending on one model provider." },
+      { "type": "related-to", "target": "managed-services-vs-self-managed", "note": "The AI version of managed vs self-managed." }
+    ]
+  },
+  {
+    "id": "vector-databases",
+    "title": "Vector Databases",
+    "type": "concept",
+    "layer": "ai-infrastructure",
+    "subcategory": "vector-databases",
+    "secondaryLayers": ["databases"],
+    "description": "Stores that index embeddings for similarity search, and how to choose between dedicated engines and extensions.",
+    "tags": ["vector database", "embeddings", "similarity search", "pgvector", "ann", "rag"],
+    "aliases": ["vector db selection", "pgvector"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Vector databases index high-dimensional embeddings with approximate nearest neighbour algorithms (such as HNSW) to retrieve similar items quickly.",
+      "whenToUse": ["Semantic search and RAG retrieval.", "Recommendations based on embedding similarity."],
+      "whenNotToUse": ["A dedicated vector database for small corpora that an extension (pgvector) in your existing database can serve."],
+      "application": ["Start with vector support in an existing database; move to a dedicated engine when scale, filtering or latency require it.", "Evaluate recall, filtering with metadata, update rates and cost."],
+      "summary": "Prefer the database you already run until it cannot meet retrieval needs."
+    },
+    "relations": [
+      { "type": "related-to", "target": "postgresql", "note": "pgvector is a common starting point." }
+    ]
+  }
+]

@@ -1,0 +1,253 @@
+[
+  {
+    "id": "should-you-adopt-kubernetes",
+    "title": "Should You Adopt Kubernetes?",
+    "type": "decision",
+    "layer": "compute",
+    "subcategory": "kubernetes-hub",
+    "secondaryLayers": ["architecture-decisions", "platform-engineering"],
+    "description": "The Kubernetes decision center: what Kubernetes solves, what it does not, what it costs to run, and the signs that you are adopting it too early.",
+    "question": "Do we need Kubernetes, or is a simpler platform enough?",
+    "tags": ["kubernetes", "k8s", "container orchestration", "platform", "adoption"],
+    "aliases": ["do I need kubernetes", "kubernetes decision center", "when kubernetes becomes a liability"],
+    "problems": ["do I need kubernetes", "should we use kubernetes", "my deployment process is becoming complicated"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Kubernetes overview", "url": "https://kubernetes.io/docs/concepts/overview/", "publisher": "kubernetes.io" }],
+    "sections": {
+      "overview": "Kubernetes schedules containers across a cluster, restarts failed workloads, rolls out new versions, provides service discovery and exposes an extensible API for automating infrastructure. It is powerful and general, and it is a platform you have to run.",
+      "context": "Kubernetes solves orchestration: placing many containers on many machines and keeping them in the desired state. It does not solve application design, observability, security policy, CI/CD or cost control. Those become your responsibility on top of it.",
+      "assumptions": ["You have already decided to package workloads as containers.", "You are comparing against managed alternatives such as ECS, Cloud Run, App Runner or a PaaS."],
+      "whenToUse": ["Many services (roughly dozens) with varied resource needs sharing infrastructure.", "Portability across clouds or on-premises is a real requirement.", "You need ecosystem capabilities: operators, custom controllers, service mesh, GPU scheduling.", "You have, or will fund, people who own the cluster: upgrades, add-ons, security, cost."],
+      "whenNotToUse": ["A handful of services that a PaaS or ECS/Fargate can run.", "No one has time to own cluster upgrades every few months.", "The main motivation is résumé value or 'everyone uses it'.", "Workloads are spiky and small enough for serverless."],
+      "alternatives": ["Amazon ECS with Fargate.", "Serverless containers (Cloud Run, App Runner, Azure Container Apps).", "PaaS (Heroku-style platforms, Render, Fly.io).", "Serverless functions for event-driven work."],
+      "operations": ["Version upgrades on a frequent release cycle; each minor version has a limited support window.", "Add-ons to choose and maintain: CNI, ingress controller, DNS, autoscaler, certificate management, secrets integration, policy.", "Workload configuration: resource requests and limits, probes, disruption budgets.", "Security: RBAC, pod security, network policies, image provenance."],
+      "cost": "The cluster itself is cheap compared with the people needed to run it well. Poor resource requests also waste capacity; idle node headroom is a common hidden cost.",
+      "organization": "Kubernetes tends to need a platform function. If application teams each own cluster details, cognitive load goes up and delivery slows.",
+      "failureModes": ["Premature Kubernetes: platform work crowds out product work.", "Misconfigured resource limits leading to evictions and noisy neighbours.", "Upgrade debt: clusters stuck on unsupported versions.", "Hidden single points of failure in add-ons (DNS, ingress controller)."],
+      "implementation": ["Start with a managed control plane.", "Standardize a small set of add-ons and a deployment template (a golden path).", "Define who owns the cluster and the upgrade calendar before production workloads land."],
+      "summary": "Adopt Kubernetes when the number and variety of workloads, portability needs or ecosystem requirements outweigh the cost of a team that runs it. Otherwise, a managed container platform will get you further, faster."
+    },
+    "tradeoffs": {
+      "options": ["Kubernetes", "Managed container platform (ECS/Fargate, Cloud Run)", "PaaS / serverless"],
+      "rows": [
+        { "dimension": "Cost", "values": ["Low infra cost; high staff cost", "Moderate; little staff cost", "Higher unit cost; minimal staff cost"] },
+        { "dimension": "Scalability", "values": ["Very high, with tuning", "High", "High within platform limits"] },
+        { "dimension": "Complexity", "values": ["High", "Low to moderate", "Low"] },
+        { "dimension": "Operations", "values": ["Upgrades, add-ons, security, capacity", "Service configuration", "Application only"] },
+        { "dimension": "Developer Experience", "values": ["Good with a golden path; poor without", "Simple", "Simplest"] },
+        { "dimension": "Organizational Fit", "values": ["Platform team exists", "Small to mid-size teams", "Very small teams"] },
+        { "dimension": "Flexibility", "values": ["Portable; extensible", "Provider-specific", "Most constrained"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Kubernetes", "chooseWhen": ["Dozens of services", "Portability or ecosystem needs", "Funded platform ownership"], "avoidWhen": ["No owner for upgrades", "Few services"] },
+      { "option": "Managed container platform (ECS/Fargate, Cloud Run)", "chooseWhen": ["Containers without platform staff", "Single cloud"] },
+      { "option": "PaaS / serverless", "chooseWhen": ["Very small team", "Standard web workloads", "Spiky traffic"] }
+    ],
+    "relations": [
+      { "type": "evaluates", "target": "kubernetes", "note": "The technology being considered." },
+      { "type": "alternative-to", "target": "kubernetes-vs-ecs", "note": "The most common AWS alternative." },
+      { "type": "can-cause", "target": "premature-kubernetes", "note": "Adopting Kubernetes before workloads or team need it." },
+      { "type": "precedes", "target": "managed-vs-self-managed-kubernetes", "note": "If you adopt it, decide who runs the control plane." },
+      { "type": "precedes", "target": "should-you-build-an-internal-developer-platform", "note": "Kubernetes usually needs a paved path on top." },
+      { "type": "requires-capability", "target": "observability", "note": "Clusters are opaque without metrics, logs and events." },
+      { "type": "related-to", "target": "startup-architecture-review", "note": "Startups should usually defer Kubernetes." }
+    ]
+  },
+  {
+    "id": "kubernetes",
+    "title": "Kubernetes",
+    "type": "technology",
+    "layer": "compute",
+    "subcategory": "kubernetes-hub",
+    "description": "An open-source container orchestrator that keeps workloads in a declared desired state across a cluster of machines.",
+    "tags": ["kubernetes", "k8s", "orchestration", "containers", "cncf"],
+    "aliases": ["k8s", "EKS", "GKE", "AKS"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Kubernetes documentation", "url": "https://kubernetes.io/docs/home/", "publisher": "kubernetes.io" }],
+    "sections": {
+      "overview": "Kubernetes runs containers on a cluster of nodes. You declare desired state (deployments, services, config) through its API; controllers continuously reconcile the actual state toward it.",
+      "context": "In an architecture, Kubernetes is the runtime platform layer: scheduling, service discovery through cluster DNS and Services, rolling deployments, self-healing and an extension API. External traffic enters through ingress or gateway resources.",
+      "whenToUse": ["Running many heterogeneous services on shared infrastructure.", "Automating infrastructure through custom controllers and operators.", "Portability across environments."],
+      "whenNotToUse": ["Does not provide CI/CD, observability, or secrets management by itself.", "Steep learning curve; many configuration choices with production consequences.", "Frequent version upgrades are mandatory to stay supported."],
+      "alternatives": ["Amazon ECS", "Serverless containers", "Serverless functions", "PaaS"],
+      "operations": ["Cluster upgrades and add-on lifecycle.", "Capacity and autoscaling (nodes and pods).", "RBAC, network policy and pod security.", "Backup of cluster state when self-managed."],
+      "failureModes": ["Missing or wrong resource requests causing evictions or waste.", "Liveness probes that restart healthy-but-slow pods and amplify overload.", "DNS or ingress controller saturation becoming a cluster-wide single point of failure."],
+      "summary": "A general-purpose orchestration platform: very capable, and a commitment."
+    },
+    "relations": [
+      { "type": "provides", "target": "service-discovery", "note": "Services and cluster DNS give stable names for changing sets of pods." },
+      { "type": "requires", "target": "ingress", "note": "External traffic entering the cluster needs ingress or gateway routing." },
+      { "type": "integrates-with", "target": "service-mesh", "note": "Meshes add mTLS, retries and traffic policy between pods." },
+      { "type": "integrates-with", "target": "prometheus", "note": "The common metrics stack for clusters." },
+      { "type": "competes-with", "target": "amazon-ecs", "note": "The AWS-native alternative." },
+      { "type": "requires-capability", "target": "observability", "note": "You need cluster and workload telemetry to operate it." },
+      { "type": "introduces-risk", "target": "premature-kubernetes", "note": "Its operational cost is often underestimated." },
+      { "type": "depends-on", "target": "docker", "note": "Workloads are packaged as OCI container images, typically built with Docker." }
+    ]
+  },
+  {
+    "id": "amazon-ecs",
+    "title": "Amazon ECS",
+    "type": "technology",
+    "layer": "compute",
+    "subcategory": "serverless",
+    "description": "AWS's container orchestration service, usable with EC2 capacity or the serverless Fargate launch type.",
+    "tags": ["ecs", "fargate", "aws", "containers", "orchestration"],
+    "aliases": ["ECS", "Fargate", "Elastic Container Service"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Amazon ECS?", "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html", "publisher": "AWS" }],
+    "sections": {
+      "overview": "ECS runs containers defined as task definitions, grouped into services with desired counts, load balancer integration and autoscaling. With Fargate, AWS manages the underlying capacity.",
+      "context": "ECS fills the same architectural role as Kubernetes (container orchestration) with fewer concepts and AWS-specific integration with IAM, ALB, CloudWatch and Secrets Manager.",
+      "whenToUse": ["Containers on AWS without a platform team.", "Teams that want orchestration without cluster upgrades."],
+      "whenNotToUse": ["Tied to AWS.", "Smaller ecosystem than Kubernetes; no operators or CRDs."],
+      "summary": "A pragmatic default for containers on AWS."
+    },
+    "relations": [
+      { "type": "alternative-to", "target": "kubernetes", "note": "Simpler orchestration on AWS." },
+      { "type": "mitigates", "target": "premature-kubernetes", "note": "Offers orchestration without cluster operations." },
+      { "type": "integrates-with", "target": "docker", "note": "Runs standard container images." }
+    ]
+  },
+  {
+    "id": "aws-lambda",
+    "title": "AWS Lambda",
+    "type": "technology",
+    "layer": "compute",
+    "subcategory": "serverless",
+    "description": "AWS's function-as-a-service platform: event-triggered code, automatic scaling and per-invocation billing.",
+    "tags": ["lambda", "serverless", "faas", "aws", "functions"],
+    "aliases": ["Lambda"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is AWS Lambda?", "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html", "publisher": "AWS" }],
+    "sections": {
+      "overview": "Lambda runs functions in response to events (HTTP via API Gateway, queues, streams, storage events, schedules). It scales concurrency automatically and bills for invocations and execution duration.",
+      "context": "Lambda is the compute tier in event-driven and low-operations architectures. It integrates closely with SQS, SNS, EventBridge, DynamoDB streams and S3.",
+      "whenToUse": ["Event processing and glue code.", "APIs with spiky or low traffic.", "Teams that want no server management."],
+      "whenNotToUse": ["Execution time limits rule out long jobs.", "Cold starts add latency.", "Bursts can open many database connections at once."],
+      "failureModes": ["Concurrency spikes overwhelming downstream databases.", "Recursive invocation loops producing large bills.", "Retries on async events without idempotency causing duplicates."],
+      "summary": "Excellent for event-driven work; mind concurrency and downstream limits."
+    },
+    "relations": [
+      { "type": "implements", "target": "cloud-service-models", "note": "A function-as-a-service platform." },
+      { "type": "integrates-with", "target": "amazon-sqs", "note": "Common queue-triggered processing pattern." },
+      { "type": "related-to", "target": "cold-starts", "note": "Initialization latency on new execution environments." },
+      { "type": "introduces-risk", "target": "thundering-herd", "note": "Rapid concurrency growth can overwhelm downstream systems." }
+    ]
+  },
+  {
+    "id": "docker",
+    "title": "Docker",
+    "type": "technology",
+    "layer": "compute",
+    "subcategory": "containers",
+    "description": "Tooling to build, ship and run OCI container images that package an application with its dependencies.",
+    "tags": ["docker", "containers", "oci", "images"],
+    "aliases": ["containers", "container images"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Docker overview", "url": "https://docs.docker.com/get-started/docker-overview/", "publisher": "Docker" }],
+    "sections": {
+      "overview": "Docker builds container images from Dockerfiles and runs them as isolated processes using Linux namespaces and cgroups. Images follow the OCI standard, so any compatible runtime can run them.",
+      "context": "Containers are the packaging unit that makes deployments reproducible across laptops, CI and production. They are a prerequisite for orchestrators and serverless container platforms.",
+      "whenToUse": ["Reproducible builds and deployments.", "Consistent local development environments."],
+      "whenNotToUse": ["Containers share the host kernel; isolation is weaker than virtual machines.", "Images need patching; base images accumulate vulnerabilities."],
+      "failureModes": ["Running as root and using large base images with many vulnerabilities.", "Baking secrets into image layers."],
+      "summary": "The standard unit of deployment for modern infrastructure."
+    },
+    "relations": [
+      { "type": "prerequisite-for", "target": "should-you-adopt-kubernetes", "note": "Containers come before the orchestration question." },
+      { "type": "introduces-risk", "target": "secret-sprawl", "note": "Secrets baked into images spread to every registry and host that pulls them." }
+    ]
+  },
+  {
+    "id": "ingress",
+    "title": "Ingress",
+    "type": "concept",
+    "layer": "compute",
+    "subcategory": "kubernetes-hub",
+    "secondaryLayers": ["networking"],
+    "description": "How external HTTP traffic is routed into services inside a Kubernetes cluster.",
+    "tags": ["ingress", "kubernetes", "gateway api", "routing", "load balancer", "tls"],
+    "aliases": ["ingress controller", "Gateway API"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "Kubernetes Ingress", "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/", "publisher": "kubernetes.io" }],
+    "sections": {
+      "overview": "An Ingress resource declares HTTP routing rules (hosts, paths, TLS) from outside the cluster to Services. An ingress controller (often NGINX- or Envoy-based) implements those rules. The newer Gateway API offers a more expressive, role-oriented model for the same job.",
+      "context": "Ingress sits at the cluster edge, usually behind a cloud load balancer. It terminates TLS, routes by host and path, and can apply basic policies. It is often confused with an API gateway, which adds API management concerns such as authentication, rate limits and versioning.",
+      "whenToUse": ["Any cluster serving HTTP traffic from outside."],
+      "whenNotToUse": ["For full API management (keys, quotas, developer portal), use an API gateway in front of or alongside ingress."],
+      "failureModes": ["A single ingress controller deployment becoming a cluster-wide single point of failure.", "Controller config reloads under heavy change causing dropped connections."],
+      "summary": "The routing edge of a cluster; plan its redundancy like any other critical path."
+    },
+    "relations": [
+      { "type": "precedes", "target": "api-gateway", "note": "When external traffic needs authentication, quotas and API lifecycle control, an API gateway adds those on top of routing." },
+      { "type": "related-to", "target": "nginx", "note": "A widely used ingress controller implementation." },
+      { "type": "related-to", "target": "envoy", "note": "Basis of several ingress and Gateway API implementations." },
+      { "type": "related-to", "target": "l4-vs-l7-load-balancing", "note": "Ingress is L7 routing." }
+    ]
+  },
+  {
+    "id": "service-mesh",
+    "title": "Service Mesh",
+    "type": "pattern",
+    "layer": "compute",
+    "subcategory": "kubernetes-hub",
+    "secondaryLayers": ["networking", "reliability", "security"],
+    "description": "An infrastructure layer that handles service-to-service traffic: mTLS, retries, timeouts, routing and telemetry.",
+    "tags": ["service mesh", "istio", "linkerd", "envoy", "mtls", "sidecar"],
+    "aliases": ["Istio", "Linkerd"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A service mesh moves network concerns out of application code into proxies (sidecars or node-level proxies) managed by a control plane. It provides mutual TLS, traffic shifting, retries, timeouts and uniform telemetry.",
+      "whenToUse": ["Many services in multiple languages that need consistent mTLS and traffic policy.", "Progressive delivery (canaries, traffic splitting) at scale."],
+      "whenNotToUse": ["A few services where a library or gateway is enough.", "Teams not yet comfortable operating Kubernetes."],
+      "operations": "Adds a control plane to upgrade, proxies to tune, and a new place for misconfiguration to break traffic.",
+      "failureModes": ["Mesh-level retries stacking with application retries, causing retry storms.", "Control plane outages affecting configuration rollout."],
+      "summary": "Valuable at scale for zero-trust networking and traffic control; heavy for small systems."
+    },
+    "relations": [
+      { "type": "depends-on", "target": "kubernetes", "note": "Most meshes are built for Kubernetes." },
+      { "type": "provides", "target": "circuit-breaker", "note": "Outlier detection and connection limits act as circuit breaking." },
+      { "type": "provides", "target": "zero-trust", "note": "mTLS between workloads supports zero-trust networking." },
+      { "type": "amplifies", "target": "retry-storms", "note": "If mesh and application both retry, load multiplies." },
+      { "type": "integrates-with", "target": "envoy", "note": "Envoy is the data plane of several meshes." }
+    ]
+  },
+  {
+    "id": "cold-starts",
+    "title": "Cold Starts",
+    "type": "concept",
+    "layer": "compute",
+    "subcategory": "serverless",
+    "description": "The extra latency when a serverless platform must create a new execution environment for a request.",
+    "tags": ["cold start", "serverless", "lambda", "latency"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "When no warm environment is available, the platform must allocate one, load the runtime and run initialization code before handling the request. That delay is a cold start.",
+      "context": "Cold start impact depends on runtime, package size, initialization work and network attachment. It matters most for latency-sensitive synchronous APIs with spiky traffic.",
+      "prevention": ["Keep packages small and initialization lazy.", "Use provisioned or minimum concurrency for latency-critical paths.", "Choose lightweight runtimes for user-facing functions."],
+      "summary": "A real but manageable constraint; measure p99, not averages."
+    },
+    "relations": [
+      { "type": "degrades", "target": "aws-lambda", "note": "Adds tail latency to function invocations." },
+      { "type": "influences", "target": "containers-vs-serverless", "note": "A main reason latency-critical services choose containers." }
+    ]
+  }
+]

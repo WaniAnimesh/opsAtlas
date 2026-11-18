@@ -1,0 +1,228 @@
+[
+  {
+    "id": "first-principles-thinking",
+    "title": "First Principles Thinking",
+    "type": "framework",
+    "layer": "decision-frameworks",
+    "subcategory": "framework-library",
+    "description": "Reasoning from the underlying requirements and constraints instead of copying what others use.",
+    "tags": ["first principles", "reasoning", "requirements", "decision making"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Break a decision down to what must be true: the workload's actual requirements, the hard constraints, and the physics or economics involved. Then build the solution up from those, rather than starting from a popular technology.",
+      "whenToUse": ["When a technology is proposed because 'everyone uses it'.", "When requirements are fuzzy and the debate is about tools."],
+      "whenNotToUse": ["For low-stakes, easily reversible choices; copying a sensible default is faster."],
+      "reasoning": "Most architecture mistakes come from solving a problem the team does not have. Writing down the actual requirements exposes that early.",
+      "application": ["State the problem in numbers (requests per second, data size, latency target, team size).", "List hard constraints (compliance, budget, skills).", "Ask what is the simplest design that meets them, then what would have to change to need more."],
+      "examples": ["'We need Kafka' becomes 'we need durable fan-out of ~200 events/second to three consumers', which SNS+SQS meets."],
+      "limitations": "Time-consuming; can ignore valuable lessons encoded in industry defaults.",
+      "summary": "Start from the requirement, not the tool."
+    },
+    "relations": [
+      { "type": "influences", "target": "should-you-adopt-kubernetes", "note": "Clarifies whether orchestration is the actual need." },
+      { "type": "influences", "target": "monolith-vs-microservices", "note": "Separates team scaling from workload scaling." }
+    ]
+  },
+  {
+    "id": "systems-thinking",
+    "title": "Systems Thinking",
+    "type": "framework",
+    "layer": "decision-frameworks",
+    "subcategory": "framework-library",
+    "description": "Looking at feedback loops, delays and interactions across technology and organization rather than isolated components.",
+    "tags": ["systems thinking", "feedback loops", "second-order effects"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Systems thinking models how parts influence each other over time. Many failures (cascades, retry storms, platform bottlenecks) are feedback loops, not single faults.",
+      "whenToUse": ["Analysing incidents with no single root cause.", "Predicting second-order effects of a change."],
+      "whenNotToUse": ["Simple, local decisions."],
+      "reasoning": "Reinforcing loops amplify (retries increase load, which increases failures, which increases retries). Balancing loops stabilize (backoff, load shedding).",
+      "application": ["Draw causal loops for proposed changes.", "Ask what this change makes more likely, and what happens next."],
+      "examples": ["A platform team that gates changes causes shadow infrastructure, which increases inconsistency, which increases gatekeeping."],
+      "limitations": "Models can become too abstract to act on.",
+      "summary": "Look for loops, not just causes."
+    },
+    "relations": [
+      { "type": "deepens", "target": "cascade-failures", "note": "Cascades are reinforcing feedback loops." },
+      { "type": "deepens", "target": "platform-team-bottleneck", "note": "An organizational feedback loop." }
+    ]
+  },
+  {
+    "id": "risk-matrix",
+    "title": "Risk Matrix",
+    "type": "framework",
+    "layer": "decision-frameworks",
+    "subcategory": "framework-library",
+    "description": "Ranking risks by likelihood and impact to decide where to invest in mitigation.",
+    "tags": ["risk matrix", "risk assessment", "likelihood", "impact"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Each risk is scored for likelihood and impact, typically on a small scale. The grid shows which risks need action now, which need monitoring, and which can be accepted.",
+      "whenToUse": ["Architecture reviews.", "Prioritizing reliability and security work."],
+      "whenNotToUse": ["When precise quantitative data exists; use it instead of coarse scores."],
+      "reasoning": "Makes risk discussions comparable and explicit.",
+      "application": ["List failure patterns relevant to the design.", "Score each, agree mitigations for the high-high quadrant first."],
+      "examples": ["A single-region database with no tested restore: medium likelihood, high impact; mitigate now."],
+      "limitations": "Scores are subjective; low-likelihood, catastrophic risks are easy to underweight.",
+      "summary": "A shared language for which risks matter most."
+    },
+    "relations": [
+      { "type": "related-to", "target": "growth-architecture-review", "note": "Used to prioritize review findings." },
+      { "type": "related-to", "target": "single-point-of-failure", "note": "SPOFs are classic high-impact risks." }
+    ]
+  },
+  {
+    "id": "cost-benefit-analysis",
+    "title": "Cost-Benefit Analysis",
+    "type": "framework",
+    "layer": "decision-frameworks",
+    "subcategory": "framework-library",
+    "secondaryLayers": ["cost"],
+    "description": "Comparing the full costs of an option (money, time, risk, opportunity) with its expected benefits.",
+    "tags": ["cost benefit", "tco", "roi", "economics"],
+    "aliases": ["TCO", "architecture ROI"],
+    "difficulty": "orientation",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "List every cost (build, run, maintain, migrate, risk) and every benefit (revenue, saved time, reduced risk) over a time horizon, and compare options.",
+      "whenToUse": ["Build vs buy.", "Managed vs self-managed.", "Setting availability targets."],
+      "whenNotToUse": ["When benefits are impossible to estimate even roughly; use reversible experiments instead."],
+      "reasoning": "Hidden costs (operations, opportunity cost) usually decide the outcome.",
+      "application": ["Use a 2–3 year horizon.", "Include staff time at full cost.", "Include the cost of reversing the decision."],
+      "examples": ["Self-hosting a database saves on fees but adds part of an engineer's time, plus backup risk."],
+      "limitations": "Estimates are uncertain; present ranges.",
+      "summary": "Count the costs you will pay later, not just today."
+    },
+    "relations": [
+      { "type": "influences", "target": "build-vs-buy", "note": "The primary framework for the decision." },
+      { "type": "influences", "target": "managed-services-vs-self-managed", "note": "Total cost of ownership comparison." }
+    ]
+  },
+  {
+    "id": "architecture-fitness-functions",
+    "title": "Architecture Fitness Functions",
+    "type": "framework",
+    "layer": "decision-frameworks",
+    "subcategory": "framework-library",
+    "description": "Automated checks that verify an architecture keeps the properties it was designed for.",
+    "tags": ["fitness functions", "evolutionary architecture", "architecture tests", "guardrails"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A fitness function is a test or metric that guards an architectural characteristic: module dependency rules, latency budgets, bundle size, no public buckets, cost per request below a threshold.",
+      "whenToUse": ["Protecting decisions (module boundaries, SLOs) against gradual erosion."],
+      "whenNotToUse": ["For properties that cannot be measured reliably; you get noise."],
+      "reasoning": "Decisions decay unless something checks them continuously.",
+      "application": ["Encode module boundary rules in CI for a modular monolith.", "Fail builds on dependency or policy violations.", "Track SLO compliance as a release gate."],
+      "examples": ["The Decision Atlas build fails if any relationship points to a missing entity."],
+      "limitations": "Too many checks slow teams down; focus on the properties that matter most.",
+      "summary": "Turn architecture intentions into automated checks."
+    },
+    "relations": [
+      { "type": "prevents", "target": "premature-microservices", "note": "Enforced module boundaries make a modular monolith viable." },
+      { "type": "related-to", "target": "modular-monolith", "note": "Boundary enforcement." }
+    ]
+  },
+  {
+    "id": "startup-architecture-review",
+    "title": "Startup Architecture Review",
+    "type": "review",
+    "layer": "architecture-reviews",
+    "subcategory": "reviews",
+    "description": "Structured assessment for 0–10 engineers and 0–100K users, focused on simplicity, cost and avoiding premature complexity.",
+    "tags": ["architecture review", "startup", "assessment", "simplicity"],
+    "aliases": ["startup review"],
+    "problems": ["are we overengineering", "should we start with a monolith", "how much reliability engineering do we need"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "At this stage the main architectural risk is building too much. The review checks whether the system is simple enough to change quickly, cheap enough to run, and reliable enough not to lose customers or data.",
+      "context": "Organizations with up to about 10 engineers and up to about 100K users. Evaluation focus: simplicity, cost efficiency, time to market, operational burden, foundational reliability.",
+      "assumptions": ["Product fit is still being found.", "There is no dedicated platform or SRE team."],
+      "summary": "Score each criterion as healthy or at risk. Address at-risk items in data safety and security first, then simplicity and cost. Revisit when the team passes ~10 engineers."
+    },
+    "criteria": [
+      { "area": "Topology", "question": "Is the system one deployable (or a very small number)?", "healthy": "Monolith or modular monolith with clear modules.", "risk": "Many services for a small team.", "explore": ["monolith-vs-microservices", "premature-microservices"] },
+      { "area": "Compute", "question": "Does the platform need anyone to operate it?", "healthy": "PaaS, serverless or managed containers.", "risk": "Self-run Kubernetes or VMs with manual setup.", "explore": ["should-you-adopt-kubernetes", "premature-kubernetes"] },
+      { "area": "Data safety", "question": "Are backups automated and has a restore been tested?", "healthy": "Managed database with point-in-time recovery; restore tested.", "risk": "No tested restore.", "explore": ["rto-and-rpo", "managed-services-vs-self-managed"] },
+      { "area": "Availability", "question": "Is there redundancy across zones for the core path?", "healthy": "Multi-zone managed database and app tier.", "risk": "Single instance for anything critical.", "explore": ["single-point-of-failure", "regions-and-availability-zones"] },
+      { "area": "Security", "question": "Are secrets centralized and identity bought rather than built?", "healthy": "Secrets manager; managed identity provider.", "risk": "Secrets in code or env files; custom auth.", "explore": ["secret-sprawl", "managed-vs-custom-identity"] },
+      { "area": "Observability", "question": "Can you tell when users are affected?", "healthy": "Error tracking, uptime checks and basic metrics with alerts.", "risk": "Learning about outages from customers.", "explore": ["observability"] },
+      { "area": "Cost", "question": "Is spend proportionate to usage?", "healthy": "Cost reviewed monthly; no idle large resources.", "risk": "Fixed costs far above usage.", "explore": ["unit-economics", "containers-vs-serverless"] }
+    ],
+    "relations": [
+      { "type": "precedes", "target": "growth-architecture-review", "note": "The next review as the company grows." },
+      { "type": "related-to", "target": "modular-monolith", "note": "The usual recommended topology." }
+    ]
+  },
+  {
+    "id": "growth-architecture-review",
+    "title": "Growth Company Architecture Review",
+    "type": "review",
+    "layer": "architecture-reviews",
+    "subcategory": "reviews",
+    "description": "Structured assessment for 10–100 engineers and 100K–10M users, focused on scaling, boundaries, ownership and platform investment.",
+    "tags": ["architecture review", "growth", "scaleup", "assessment"],
+    "aliases": ["growth review", "scaleup review"],
+    "problems": ["is our architecture appropriate for our current scale", "what architecture investments should we prioritize"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Growth brings two kinds of pressure: load on the system and coordination load on teams. The review checks whether boundaries, data architecture, delivery and observability are keeping up.",
+      "context": "Organizations with roughly 10–100 engineers and 100K–10M users. Evaluation focus: scaling, service boundaries, database architecture, deployment maturity, observability, team ownership, platform investment.",
+      "summary": "Rank at-risk findings with a risk matrix. Usually, fix ownership and observability first; they make every other change safer."
+    },
+    "criteria": [
+      { "area": "Boundaries", "question": "Do module or service boundaries match team ownership?", "healthy": "Each team owns clear modules or services.", "risk": "Features routinely need several teams to coordinate.", "explore": ["modular-monolith-vs-microservices", "conways-law"] },
+      { "area": "Ownership", "question": "Does every component have an owning team and on-call?", "healthy": "Service catalog with owners.", "risk": "Orphaned services and alerts.", "explore": ["ownership-confusion", "backstage"] },
+      { "area": "Database", "question": "How much headroom does the primary database have?", "healthy": "Measured headroom; replicas and caching in place.", "risk": "Primary near limits with no plan.", "explore": ["read-replicas", "caching", "sharding"] },
+      { "area": "Delivery", "question": "Can teams deploy independently and safely?", "healthy": "Automated pipelines, staged rollouts, quick rollback.", "risk": "Release trains and manual steps.", "explore": ["golden-paths", "should-you-build-an-internal-developer-platform"] },
+      { "area": "Observability", "question": "Can you trace a request end to end?", "healthy": "Correlated metrics, logs and traces; SLOs on key journeys.", "risk": "Logs only; no SLOs.", "explore": ["distributed-tracing", "slos-and-error-budgets"] },
+      { "area": "Resilience", "question": "Do remote calls have timeouts, backoff and circuit breakers?", "healthy": "Standard resilience library or mesh policy.", "risk": "Default timeouts and unbounded retries.", "explore": ["cascade-failures", "retry-storms", "circuit-breaker"] },
+      { "area": "Platform", "question": "Are teams duplicating infrastructure work?", "healthy": "Shared templates or a platform team run as a product.", "risk": "Every team builds its own pipeline.", "explore": ["platform-team-vs-embedded-teams"] }
+    ],
+    "relations": [
+      { "type": "precedes", "target": "enterprise-architecture-review", "note": "The next review at enterprise scale." },
+      { "type": "related-to", "target": "risk-matrix", "note": "Prioritize findings." }
+    ]
+  },
+  {
+    "id": "enterprise-architecture-review",
+    "title": "Enterprise Architecture Review",
+    "type": "review",
+    "layer": "architecture-reviews",
+    "subcategory": "reviews",
+    "description": "Structured assessment for 100+ engineers and global systems, focused on governance, multi-region reliability, security and cost management.",
+    "tags": ["architecture review", "enterprise", "governance", "assessment"],
+    "aliases": ["enterprise review"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "At enterprise scale, architecture is mostly about consistency, risk and cost across many teams. The review checks governance, resilience across regions, security baselines and financial accountability.",
+      "context": "Organizations with 100+ engineers running global systems. Evaluation focus: organizational architecture, governance, multi-region reliability, security, platform standardization, cost management, operational resilience.",
+      "summary": "Findings feed a multi-quarter roadmap. Prioritize by business impact and the number of teams affected."
+    },
+    "criteria": [
+      { "area": "Reliability", "question": "Are availability targets set per journey and backed by tested multi-site recovery?", "healthy": "SLOs per journey; regular failover exercises.", "risk": "Untested DR; uniform 'five nines' claims.", "explore": ["does-your-business-need-five-nines", "active-active-vs-active-passive", "chaos-engineering"] },
+      { "area": "Change safety", "question": "Are global changes staged?", "healthy": "Progressive rollout for code and configuration.", "risk": "Global configuration pushes in one step.", "explore": ["single-point-of-failure", "cloudflare-edge-platform"] },
+      { "area": "Security", "question": "Is identity-based access enforced between services and for people?", "healthy": "Zero-trust principles; central secrets; least privilege.", "risk": "Flat networks; long-lived credentials.", "explore": ["zero-trust", "secrets-management", "exposed-buckets"] },
+      { "area": "Platform", "question": "Is there a standard, self-service platform?", "healthy": "Golden paths with high adoption.", "risk": "Platform bottleneck or many competing platforms.", "explore": ["platform-team-bottleneck", "golden-paths"] },
+      { "area": "Cost", "question": "Is cost allocated to owners and tracked per unit?", "healthy": "Tagging, showback/chargeback, unit cost trends.", "risk": "Unallocated shared spend.", "explore": ["unit-economics"] },
+      { "area": "Knowledge", "question": "Are critical systems understood by more than one person?", "healthy": "Runbooks, decision records, rotations.", "risk": "Key-person dependencies.", "explore": ["knowledge-silos"] }
+    ],
+    "relations": [
+      { "type": "related-to", "target": "amazon-service-oriented-architecture", "note": "Large-scale service ownership in practice." }
+    ]
+  }
+]

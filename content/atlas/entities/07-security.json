@@ -1,0 +1,152 @@
+[
+  {
+    "id": "oauth-vs-saml",
+    "title": "OAuth 2.0 / OIDC vs SAML",
+    "type": "comparison",
+    "layer": "security",
+    "subcategory": "identity",
+    "description": "Comparing token-based delegated authorization and OpenID Connect with XML-based enterprise federation.",
+    "question": "Should our login and federation use OIDC/OAuth or SAML?",
+    "tags": ["oauth", "oidc", "openid connect", "saml", "sso", "federation", "identity"],
+    "aliases": ["OIDC vs SAML", "single sign-on"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [
+      { "title": "RFC 6749: The OAuth 2.0 Authorization Framework", "url": "https://datatracker.ietf.org/doc/html/rfc6749", "publisher": "IETF" },
+      { "title": "OpenID Connect Core 1.0", "url": "https://openid.net/specs/openid-connect-core-1_0.html", "publisher": "OpenID Foundation" }
+    ],
+    "sections": {
+      "overview": "OAuth 2.0 is an authorization framework for delegated access with tokens; OpenID Connect adds an identity layer for login. SAML 2.0 is an XML-based standard for browser single sign-on, common in enterprise identity providers.",
+      "whenToUse": ["OIDC/OAuth: new applications, mobile and SPA clients, API access tokens.", "SAML: enterprise customers whose identity providers require it."],
+      "whenNotToUse": ["SAML for API authorization or mobile apps.", "Rolling your own token handling instead of a vetted library or provider."],
+      "summary": "Build on OIDC; add SAML when enterprise customers ask for it."
+    },
+    "tradeoffs": {
+      "options": ["OAuth 2.0 / OIDC", "SAML 2.0"],
+      "rows": [
+        { "dimension": "Security", "values": ["Strong when following current best practices (PKCE, short-lived tokens)", "Mature; XML signature handling is error-prone"] },
+        { "dimension": "Developer Experience", "values": ["JSON/JWT; broad library support", "XML; harder to debug"] },
+        { "dimension": "Organizational Fit", "values": ["Consumer and modern apps", "Enterprise SSO"] }
+      ]
+    },
+    "guidance": [
+      { "option": "OAuth 2.0 / OIDC", "chooseWhen": ["New apps", "APIs", "Mobile"] },
+      { "option": "SAML 2.0", "chooseWhen": ["Enterprise customer requirement"] }
+    ],
+    "relations": [
+      { "type": "precedes", "target": "managed-vs-custom-identity", "note": "Protocol choice leads to who implements it." }
+    ]
+  },
+  {
+    "id": "managed-vs-custom-identity",
+    "title": "Managed Identity vs Custom Identity",
+    "type": "decision",
+    "layer": "security",
+    "subcategory": "identity",
+    "description": "Whether to use an identity provider service or build authentication and user management in-house.",
+    "question": "Should we build our own authentication or use an identity provider?",
+    "tags": ["identity", "authentication", "idp", "auth0", "cognito", "entra id", "build vs buy"],
+    "aliases": ["build vs buy auth"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "Managed identity providers handle sign-up, login, MFA, password storage, federation and token issuance. Custom identity means your team implements and secures these.",
+      "whenToUse": ["Managed: almost always, especially for small teams and products needing SSO and MFA.", "Custom: unusual requirements a provider cannot meet, or very large scale where cost dominates and a dedicated identity team exists."],
+      "whenNotToUse": ["Custom identity without security specialists.", "Managed identity when its pricing per active user breaks unit economics at your scale (re-evaluate periodically)."],
+      "failureModes": ["Weak password hashing or session handling in custom systems.", "Credentials and signing keys scattered across services (secret sprawl).", "Provider outage locking all users out."],
+      "summary": "Buy identity unless you can staff a team to own it."
+    },
+    "tradeoffs": {
+      "options": ["Managed identity provider", "Custom identity"],
+      "rows": [
+        { "dimension": "Security", "values": ["Specialist-run; MFA and threat detection built in", "Entirely your responsibility"] },
+        { "dimension": "Cost", "values": ["Per-user pricing", "Engineering and security staff"] },
+        { "dimension": "Reliability", "values": ["Provider dependency", "Your own availability"] },
+        { "dimension": "Flexibility", "values": ["Provider feature limits", "Full control"] }
+      ]
+    },
+    "guidance": [
+      { "option": "Managed identity provider", "chooseWhen": ["Most teams", "Need SSO and MFA quickly"] },
+      { "option": "Custom identity", "chooseWhen": ["Dedicated identity team", "Requirements no provider meets"] }
+    ],
+    "relations": [
+      { "type": "related-to", "target": "build-vs-buy", "note": "A specific build vs buy decision." },
+      { "type": "introduces-risk", "target": "secret-sprawl", "note": "Custom auth spreads signing keys and credentials." },
+      { "type": "related-to", "target": "zero-trust", "note": "Identity is the foundation of zero trust." }
+    ]
+  },
+  {
+    "id": "zero-trust",
+    "title": "Zero Trust",
+    "type": "concept",
+    "layer": "security",
+    "subcategory": "network-security",
+    "description": "A security model that authenticates and authorizes every request regardless of network location.",
+    "tags": ["zero trust", "network security", "mtls", "identity", "beyondcorp"],
+    "aliases": ["BeyondCorp"],
+    "difficulty": "decision",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "NIST SP 800-207: Zero Trust Architecture", "url": "https://csrc.nist.gov/pubs/sp/800/207/final", "publisher": "NIST" }],
+    "sections": {
+      "overview": "Zero trust removes implicit trust based on network location. Every access decision uses identity, device posture and policy, and connections are encrypted.",
+      "application": ["Service-to-service: mTLS and workload identity.", "User access: identity-aware proxies instead of VPN-wide access.", "Least-privilege authorization everywhere."],
+      "limitations": "Zero trust is a direction, not a product. Partial adoption with a flat internal network still leaves lateral movement open.",
+      "summary": "Assume the network is hostile; authenticate and authorize every request."
+    },
+    "relations": [
+      { "type": "mitigates", "target": "secret-sprawl", "note": "Workload identity reduces reliance on static shared secrets." },
+      { "type": "related-to", "target": "service-mesh", "note": "Meshes provide mTLS between services." }
+    ]
+  },
+  {
+    "id": "secrets-management",
+    "title": "Secrets Management",
+    "type": "pattern",
+    "layer": "security",
+    "subcategory": "secrets",
+    "description": "Storing, distributing, rotating and auditing credentials through a central system instead of code and config files.",
+    "tags": ["secrets", "credentials", "vault", "secrets manager", "key vault", "rotation"],
+    "aliases": ["AWS Secrets Manager", "Azure Key Vault"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sections": {
+      "overview": "A secrets manager stores credentials encrypted, controls access by identity, issues short-lived or rotated secrets, and records who accessed what.",
+      "whenToUse": ["Every production system."],
+      "whenNotToUse": ["Do not put secrets in code, images, CI logs or plain environment files committed to repositories."],
+      "implementation": ["Prefer workload identity and short-lived credentials.", "Automate rotation.", "Scan repositories and images for leaked secrets."],
+      "failureModes": ["The secrets manager as a single point of failure at startup.", "Long-lived static credentials never rotated."],
+      "summary": "Centralize secrets, shorten their lifetime, and audit access."
+    },
+    "relations": [
+      { "type": "prevents", "target": "secret-sprawl", "note": "Gives secrets one controlled home." },
+      { "type": "related-to", "target": "hashicorp-vault", "note": "A widely used secrets manager." }
+    ]
+  },
+  {
+    "id": "hashicorp-vault",
+    "title": "HashiCorp Vault",
+    "type": "technology",
+    "layer": "security",
+    "subcategory": "secrets",
+    "description": "A secrets management system offering dynamic secrets, encryption as a service and identity-based access.",
+    "tags": ["vault", "hashicorp", "secrets", "dynamic secrets", "pki"],
+    "aliases": ["Vault"],
+    "difficulty": "operational",
+    "status": "published",
+    "lastReviewed": "2026-11-17",
+    "sources": [{ "title": "What is Vault?", "url": "https://developer.hashicorp.com/vault/docs/what-is-vault", "publisher": "HashiCorp" }],
+    "sections": {
+      "overview": "Vault stores and issues secrets, generates short-lived database and cloud credentials, runs a PKI and provides encryption APIs, with detailed audit logs.",
+      "whenToUse": ["Multi-cloud or hybrid environments.", "Dynamic credentials."],
+      "whenNotToUse": ["Running Vault highly available is itself operational work; cloud-native managers may suffice on one cloud."],
+      "summary": "Powerful secrets platform; budget for operating it."
+    },
+    "relations": [
+      { "type": "implements", "target": "secrets-management", "note": "A full secrets management platform." }
+    ]
+  }
+]
